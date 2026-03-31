@@ -608,6 +608,7 @@ TEMP_CFLAGS="$CFLAGS"
 CFLAGS="$ARGON2_AVX2_CFLAGS $CFLAGS"
 AC_MSG_CHECKING([for Argon2 AVX2 intrinsics])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+    #include <stdint.h>
     #include <immintrin.h>
   ]], [[
     __m256i l = _mm256_set1_epi32(0);
@@ -624,6 +625,7 @@ TEMP_CFLAGS="$CFLAGS"
 CFLAGS="$ARGON2_AVX512F_CFLAGS $CFLAGS"
 AC_MSG_CHECKING([for Argon2 AVX512 intrinsics])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+    #include <stdint.h>
     #include <immintrin.h>
   ]], [[
     __m512i l = _mm512_set1_epi32(0);
