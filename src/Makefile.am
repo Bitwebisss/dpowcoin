@@ -66,6 +66,12 @@ if ENABLE_ARM_SHANI
 LIBBITCOIN_CRYPTO_ARM_SHANI = crypto/libbitcoin_crypto_arm_shani.la
 LIBBITCOIN_CRYPTO += $(LIBBITCOIN_CRYPTO_ARM_SHANI)
 endif
+if HAVE_AVX2
+LIBBITCOIN_CRYPTO += crypto/libbitcoin_crypto_argon2_avx2.la
+endif
+if HAVE_AVX512F
+LIBBITCOIN_CRYPTO += crypto/libbitcoin_crypto_argon2_avx512.la
+endif
 noinst_LTLIBRARIES += $(LIBBITCOIN_CRYPTO)
 
 $(LIBSECP256K1): $(wildcard secp256k1/src/*.h) $(wildcard secp256k1/src/*.c) $(wildcard secp256k1/include/*)
