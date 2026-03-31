@@ -19,6 +19,9 @@
 #define ARGON2_CORE_H
 
 #include "argon2.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define CONST_CAST(x) (x)(uintptr_t)
 
@@ -224,5 +227,9 @@ void fill_segment(const argon2_instance_t *instance,
  * @return ARGON2_OK if successful, @context->state
  */
 int fill_memory_blocks(argon2_instance_t *instance);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
