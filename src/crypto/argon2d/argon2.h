@@ -430,20 +430,12 @@ ARGON2_PUBLIC size_t argon2_encodedlen(uint32_t t_cost, uint32_t m_cost,
                                        uint32_t parallelism, uint32_t saltlen,
                                        uint32_t hashlen, argon2_type type);
 
-#if defined(__cplusplus)
-}
-#include <string>
-inline std::string Argon2AutoDetect() {
-    extern const char *Argon2AutoDetectImpl(void);
-    return std::string(Argon2AutoDetectImpl());
-}
-extern "C" {
-#endif
-
 ARGON2_PUBLIC const char *Argon2AutoDetectImpl(void);
 
 #if defined(__cplusplus)
 }
-#endif
-
+#include <string>
+inline std::string Argon2AutoDetect() {
+    return std::string(Argon2AutoDetectImpl());
+}
 #endif
