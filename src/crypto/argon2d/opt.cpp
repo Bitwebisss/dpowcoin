@@ -202,6 +202,13 @@ static int AVXEnabled(void)
     return (a & 6) == 6;
 }
 
+static int AVX512Enabled(void)
+{
+    uint32_t a, d;
+    __asm__("xgetbv" : "=a"(a), "=d"(d) : "c"(0));
+    return (a & 0xE6) == 0xE6;
+}
+
 /* -------------------------------------------------------------------------
  * argon2_fill_segment — global function pointer, default = SSE2 baseline.
  * On x86, Argon2AutoDetectImpl() upgrades this to AVX2 or AVX-512 if available.
@@ -242,7 +249,7 @@ const char *Argon2AutoDetectImpl(void)
         have_avx512f = (ebx >> 16) & 1;
 
 #if defined(ENABLE_ARGON2_AVX512)
-        if (have_avx512f && have_avx && enabled_avx) {
+        if (have_avx512f && have_xsave && AVX512Enabled()) {
             argon2_fill_segment = fill_segment_avx512;
             ret = "avx512";
         } else
@@ -255,7 +262,7 @@ const char *Argon2AutoDetectImpl(void)
 #endif
         {
             /* SSE2 baseline already set above */
-            (void)have_avx2; (void)have_avx512f; (void)enabled_avx;
+            (void)have_avx; (void)have_avx2; (void)have_avx512f; (void)enabled_avx;
         }
     }
 
