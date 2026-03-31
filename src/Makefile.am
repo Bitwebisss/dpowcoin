@@ -67,10 +67,12 @@ LIBBITCOIN_CRYPTO_ARM_SHANI = crypto/libbitcoin_crypto_arm_shani.la
 LIBBITCOIN_CRYPTO += $(LIBBITCOIN_CRYPTO_ARM_SHANI)
 endif
 if ENABLE_ARGON2_AVX2
-LIBBITCOIN_CRYPTO += crypto/libbitcoin_crypto_argon2_avx2.la
+LIBBITCOIN_CRYPTO_ARGON2_AVX2 = crypto/libbitcoin_crypto_argon2_avx2.la
+LIBBITCOIN_CRYPTO += $(LIBBITCOIN_CRYPTO_ARGON2_AVX2)
 endif
 if ENABLE_ARGON2_AVX512
-LIBBITCOIN_CRYPTO += crypto/libbitcoin_crypto_argon2_avx512.la
+LIBBITCOIN_CRYPTO_ARGON2_AVX512 = crypto/libbitcoin_crypto_argon2_avx512.la
+LIBBITCOIN_CRYPTO += $(LIBBITCOIN_CRYPTO_ARGON2_AVX512)
 endif
 noinst_LTLIBRARIES += $(LIBBITCOIN_CRYPTO)
 

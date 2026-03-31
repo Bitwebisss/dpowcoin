@@ -482,6 +482,7 @@ enable_arm_shani=no
 enable_sse42=no
 enable_sse41=no
 enable_avx2=no
+enable_avx512=no
 enable_x86_shani=no
 
 if test "$use_asm" = "yes"; then
@@ -1850,6 +1851,8 @@ AM_CONDITIONAL([HARDEN], [test "$use_hardening" = "yes"])
 AM_CONDITIONAL([ENABLE_SSE42], [test "$enable_sse42" = "yes"])
 AM_CONDITIONAL([ENABLE_SSE41], [test "$enable_sse41" = "yes"])
 AM_CONDITIONAL([ENABLE_AVX2], [test "$enable_avx2" = "yes"])
+AM_CONDITIONAL([ENABLE_ARGON2_AVX2], [test "$enable_avx2" = "yes"])
+AM_CONDITIONAL([ENABLE_ARGON2_AVX512], [test "$enable_avx512" = "yes"])
 AM_CONDITIONAL([ENABLE_X86_SHANI], [test "$enable_x86_shani" = "yes"])
 AM_CONDITIONAL([ENABLE_ARM_CRC], [test "$enable_arm_crc" = "yes"])
 AM_CONDITIONAL([ENABLE_ARM_SHANI], [test "$enable_arm_shani" = "yes"])
