@@ -482,8 +482,9 @@ enable_arm_shani=no
 enable_sse42=no
 enable_sse41=no
 enable_avx2=no
-enable_avx512=no
 enable_x86_shani=no
+enable_argon2_avx2=no
+enable_argon2_avx512=no
 
 if test "$use_asm" = "yes"; then
 
@@ -494,12 +495,8 @@ dnl compatibility.
 dnl x86
 AX_CHECK_COMPILE_FLAG([-msse4.2], [SSE42_CXXFLAGS="-msse4.2"], [], [$CXXFLAG_WERROR])
 AX_CHECK_COMPILE_FLAG([-msse4.1], [SSE41_CXXFLAGS="-msse4.1"], [], [$CXXFLAG_WERROR])
-AX_CHECK_COMPILE_FLAG([-mavx -mavx2], [AVX2_CXXFLAGS="-mavx -mavx2"], [], [])
-AX_CHECK_COMPILE_FLAG([-msse4 -msha], [X86_SHANI_CXXFLAGS="-msse4 -msha"], [], [])
-
-dnl x86 argon2
-AX_CHECK_COMPILE_FLAG([-mavx2], [ARGON2_AVX2_CFLAGS="-mavx2"], [], [$CFLAGS_WERROR])
-AX_CHECK_COMPILE_FLAG([-mavx512f], [ARGON2_AVX512F_CFLAGS="-mavx512f"], [], [$CFLAGS_WERROR])
+AX_CHECK_COMPILE_FLAG([-mavx -mavx2], [AVX2_CXXFLAGS="-mavx -mavx2"], [], [$CXXFLAG_WERROR])
+AX_CHECK_COMPILE_FLAG([-msse4 -msha], [X86_SHANI_CXXFLAGS="-msse4 -msha"], [], [$CXXFLAG_WERROR])
 
 enable_clmul=
 AX_CHECK_COMPILE_FLAG([-mpclmul], [enable_clmul=yes], [], [$CXXFLAG_WERROR], [AC_LANG_PROGRAM([
@@ -1887,8 +1884,8 @@ AM_CONDITIONAL([HARDEN], [test "$use_hardening" = "yes"])
 AM_CONDITIONAL([ENABLE_SSE42], [test "$enable_sse42" = "yes"])
 AM_CONDITIONAL([ENABLE_SSE41], [test "$enable_sse41" = "yes"])
 AM_CONDITIONAL([ENABLE_AVX2], [test "$enable_avx2" = "yes"])
-AM_CONDITIONAL([ENABLE_ARGON2_AVX2], [test "$enable_argon2_avx2" = "xyes"])
-AM_CONDITIONAL([ENABLE_ARGON2_AVX512], [test "$enable_argon2_avx512" = "xyes"])
+AM_CONDITIONAL([ENABLE_ARGON2_AVX2], [test "$enable_argon2_avx2" = "yes"])
+AM_CONDITIONAL([ENABLE_ARGON2_AVX512], [test "$enable_argon2_avx512" = "yes"])
 AM_CONDITIONAL([ENABLE_X86_SHANI], [test "$enable_x86_shani" = "yes"])
 AM_CONDITIONAL([ENABLE_ARM_CRC], [test "$enable_arm_crc" = "yes"])
 AM_CONDITIONAL([ENABLE_ARM_SHANI], [test "$enable_arm_shani" = "yes"])
