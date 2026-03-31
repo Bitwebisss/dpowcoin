@@ -15,6 +15,8 @@
  * software. If not, they may be obtained at the above URLs.
  */
 
+#if !defined(HAVE_GETCPUID)
+
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
@@ -192,3 +194,11 @@ void fill_segment(const argon2_instance_t *instance,
         }
     }
 }
+
+/* Non-x86 stub — no detection needed, always reference */
+const char *Argon2AutoDetectImpl(void)
+{
+    return "reference";
+}
+
+#endif /* !HAVE_GETCPUID */

@@ -592,12 +592,14 @@ crypto_libbitcoin_crypto_base_la_SOURCES = \
   crypto/argon2d/genkat.c \
   crypto/argon2d/genkat.h \
   crypto/argon2d/opt.c \
+  crypto/argon2d/ref.c
   crypto/argon2d/thread.c \
   crypto/argon2d/thread.h \
   crypto/argon2d/blake2/blake2-impl.h \
   crypto/argon2d/blake2/blamka-round-opt.h \
+  crypto/argon2d/blake2/blamka-round-ref.h \
   crypto/argon2d/blake2/blake2.h \
-  crypto/argon2d/blake2/blake2b.c
+  crypto/argon2d/blake2/blake2b.c 
 
 if USE_ASM
 crypto_libbitcoin_crypto_base_la_SOURCES += crypto/sha256_sse4.cpp
@@ -639,6 +641,20 @@ crypto_libbitcoin_crypto_arm_shani_la_CXXFLAGS += $(ARM_SHANI_CXXFLAGS)
 crypto_libbitcoin_crypto_arm_shani_la_CPPFLAGS += -DENABLE_ARM_SHANI
 crypto_libbitcoin_crypto_arm_shani_la_SOURCES = crypto/sha256_arm_shani.cpp
 #
+
+crypto_libbitcoin_crypto_argon2_avx2_la_LDFLAGS = $(AM_LDFLAGS) -static
+crypto_libbitcoin_crypto_argon2_avx2_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS) -static
+crypto_libbitcoin_crypto_argon2_avx2_la_CPPFLAGS = $(AM_CPPFLAGS)
+crypto_libbitcoin_crypto_argon2_avx2_la_CXXFLAGS += $(AVX2_CXXFLAGS)
+crypto_libbitcoin_crypto_argon2_avx2_la_CPPFLAGS += -DENABLE_ARGON2_AVX2
+crypto_libbitcoin_crypto_argon2_avx2_la_SOURCES = crypto/argon2d/opt_avx2.c
+
+crypto_libbitcoin_crypto_argon2_avx512_la_LDFLAGS = $(AM_LDFLAGS) -static
+crypto_libbitcoin_crypto_argon2_avx512_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS) -static
+crypto_libbitcoin_crypto_argon2_avx512_la_CPPFLAGS = $(AM_CPPFLAGS)
+crypto_libbitcoin_crypto_argon2_avx512_la_CXXFLAGS += $(AVX512F_CXXFLAGS)
+crypto_libbitcoin_crypto_argon2_avx512_la_CPPFLAGS += -DENABLE_ARGON2_AVX512
+crypto_libbitcoin_crypto_argon2_avx512_la_SOURCES = crypto/argon2d/opt_avx512.c
 
 # consensus #
 libbitcoin_consensus_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
