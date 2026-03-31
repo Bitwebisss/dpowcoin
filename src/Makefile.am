@@ -592,7 +592,7 @@ crypto_libbitcoin_crypto_base_la_SOURCES = \
   crypto/argon2d/genkat.c \
   crypto/argon2d/genkat.h \
   crypto/argon2d/opt.c \
-  crypto/argon2d/ref.c
+  crypto/argon2d/ref.c \
   crypto/argon2d/thread.c \
   crypto/argon2d/thread.h \
   crypto/argon2d/blake2/blake2-impl.h \
