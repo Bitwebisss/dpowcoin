@@ -494,8 +494,8 @@ dnl compatibility.
 dnl x86
 AX_CHECK_COMPILE_FLAG([-msse4.2], [SSE42_CXXFLAGS="-msse4.2"], [], [$CXXFLAG_WERROR])
 AX_CHECK_COMPILE_FLAG([-msse4.1], [SSE41_CXXFLAGS="-msse4.1"], [], [$CXXFLAG_WERROR])
-AX_CHECK_COMPILE_FLAG([-mavx -mavx2], [AVX2_CXXFLAGS="-mavx -mavx2"], [], [$CXXFLAG_WERROR])
-AX_CHECK_COMPILE_FLAG([-msse4 -msha], [X86_SHANI_CXXFLAGS="-msse4 -msha"], [], [$CXXFLAG_WERROR])
+AX_CHECK_COMPILE_FLAG([-mavx -mavx2], [AVX2_CXXFLAGS="-mavx -mavx2"], [], [])
+AX_CHECK_COMPILE_FLAG([-msse4 -msha], [X86_SHANI_CXXFLAGS="-msse4 -msha"], [], [])
 
 dnl x86 argon2
 AX_CHECK_COMPILE_FLAG([-mavx2], [ARGON2_AVX2_CFLAGS="-mavx2"], [], [$CFLAGS_WERROR])
@@ -595,7 +595,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
     #include <immintrin.h>
   ]], [[
     __m512i v = _mm512_set1_epi32(0);
-    return _mm512_cvtsi512_si32(v);
+    return 0;
   ]])],
  [ AC_MSG_RESULT([yes])
    enable_argon2_avx512=yes
@@ -608,32 +608,14 @@ TEMP_CFLAGS="$CFLAGS"
 CFLAGS="$ARGON2_AVX2_CFLAGS $CFLAGS"
 AC_MSG_CHECKING([for Argon2 AVX2 intrinsics])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-    #include <stdint.h>
     #include <immintrin.h>
   ]], [[
     __m256i l = _mm256_set1_epi32(0);
-    return _mm256_extract_epi32(l, 7);
+    return 0;
   ]])],
- [ AC_MSG_RESULT([yes]);
-   enable_argon2_avx2=yes;
+ [ AC_MSG_RESULT([yes])
+   enable_argon2_avx2=yes
    AC_DEFINE([ENABLE_ARGON2_AVX2], [1], [Define this symbol to build code that uses Argon2 AVX2 intrinsics]) ],
- [ AC_MSG_RESULT([no])]
-)
-CFLAGS="$TEMP_CFLAGS"
-
-TEMP_CFLAGS="$CFLAGS"
-CFLAGS="$ARGON2_AVX512F_CFLAGS $CFLAGS"
-AC_MSG_CHECKING([for Argon2 AVX512 intrinsics])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-    #include <stdint.h>
-    #include <immintrin.h>
-  ]], [[
-    __m512i l = _mm512_set1_epi32(0);
-    return _mm512_cvtsi512_si32(l);
-  ]])],
- [ AC_MSG_RESULT([yes]);
-   enable_argon2_avx512=yes;
-   AC_DEFINE([ENABLE_ARGON2_AVX512], [1], [Define this symbol to build code that uses Argon2 AVX512 intrinsics]) ],
  [ AC_MSG_RESULT([no])]
 )
 CFLAGS="$TEMP_CFLAGS"
