@@ -497,8 +497,8 @@ AX_CHECK_COMPILE_FLAG([-msse4.2], [SSE42_CXXFLAGS="-msse4.2"], [], [$CXXFLAG_WER
 AX_CHECK_COMPILE_FLAG([-msse4.1], [SSE41_CXXFLAGS="-msse4.1"], [], [$CXXFLAG_WERROR])
 AX_CHECK_COMPILE_FLAG([-mavx -mavx2], [AVX2_CXXFLAGS="-mavx -mavx2"], [], [$CXXFLAG_WERROR])
 AX_CHECK_COMPILE_FLAG([-msse4 -msha], [X86_SHANI_CXXFLAGS="-msse4 -msha"], [], [$CXXFLAG_WERROR])
-AX_CHECK_COMPILE_FLAG([-mavx2], [ARGON2_AVX2_CFLAGS="-mavx2"], [], [$CFLAGS_WERROR])
-AX_CHECK_COMPILE_FLAG([-mavx512f], [ARGON2_AVX512F_CFLAGS="-mavx512f"], [], [$CFLAGS_WERROR])
+AX_CHECK_COMPILE_FLAG([-mavx2], [ARGON2_AVX2_CFLAGS="-mavx2"], [], [$CXXFLAG_WERROR])
+AX_CHECK_COMPILE_FLAG([-mavx512f], [ARGON2_AVX512F_CFLAGS="-mavx512f"], [], [$CXXFLAG_WERROR])
 
 enable_clmul=
 AX_CHECK_COMPILE_FLAG([-mpclmul], [enable_clmul=yes], [], [$CXXFLAG_WERROR], [AC_LANG_PROGRAM([
@@ -587,10 +587,12 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 )
 CXXFLAGS="$TEMP_CXXFLAGS"
 
-TEMP_CFLAGS="$CFLAGS"
-CFLAGS="$ARGON2_AVX512F_CFLAGS $CFLAGS"
+# AVX512
+TEMP_CXXFLAGS="$CXXFLAGS"
+CXXFLAGS="$ARGON2_AVX512F_CFLAGS $CXXFLAGS"
 AC_MSG_CHECKING([for Argon2 AVX512 intrinsics])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+    #include <stdint.h>
     #include <immintrin.h>
   ]], [[
     __m512i v = _mm512_set1_epi32(0);
@@ -601,12 +603,14 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
    AC_DEFINE([ENABLE_ARGON2_AVX512], [1], [Define this symbol to build Argon2 AVX512 code]) ],
  [ AC_MSG_RESULT([no]) ]
 )
-CFLAGS="$TEMP_CFLAGS"
+CXXFLAGS="$TEMP_CXXFLAGS"
 
-TEMP_CFLAGS="$CFLAGS"
-CFLAGS="$ARGON2_AVX2_CFLAGS $CFLAGS"
+# AVX2
+TEMP_CXXFLAGS="$CXXFLAGS"
+CXXFLAGS="$ARGON2_AVX2_CFLAGS $CXXFLAGS"
 AC_MSG_CHECKING([for Argon2 AVX2 intrinsics])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+    #include <stdint.h>
     #include <immintrin.h>
   ]], [[
     __m256i l = _mm256_set1_epi32(0);
@@ -617,7 +621,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
    AC_DEFINE([ENABLE_ARGON2_AVX2], [1], [Define this symbol to build code that uses Argon2 AVX2 intrinsics]) ],
  [ AC_MSG_RESULT([no])]
 )
-CFLAGS="$TEMP_CFLAGS"
+CXXFLAGS="$TEMP_CXXFLAGS"
 
 # ARM
 AX_CHECK_COMPILE_FLAG([-march=armv8-a+crc+crypto], [ARM_CRC_CXXFLAGS="-march=armv8-a+crc+crypto"], [], [$CXXFLAG_WERROR])
