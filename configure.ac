@@ -497,6 +497,10 @@ AX_CHECK_COMPILE_FLAG([-msse4.1], [SSE41_CXXFLAGS="-msse4.1"], [], [$CXXFLAG_WER
 AX_CHECK_COMPILE_FLAG([-mavx -mavx2], [AVX2_CXXFLAGS="-mavx -mavx2"], [], [$CXXFLAG_WERROR])
 AX_CHECK_COMPILE_FLAG([-msse4 -msha], [X86_SHANI_CXXFLAGS="-msse4 -msha"], [], [$CXXFLAG_WERROR])
 
+dnl x86 argon2
+AX_CHECK_COMPILE_FLAG([-mavx2], [ARGON2_AVX2_CFLAGS="-mavx2"], [], [$CFLAGS_WERROR])
+AX_CHECK_COMPILE_FLAG([-mavx512f], [ARGON2_AVX512F_CFLAGS="-mavx512f"], [], [$CFLAGS_WERROR])
+
 enable_clmul=
 AX_CHECK_COMPILE_FLAG([-mpclmul], [enable_clmul=yes], [], [$CXXFLAG_WERROR], [AC_LANG_PROGRAM([
   #include <stdint.h>
@@ -583,6 +587,54 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
  [ AC_MSG_RESULT([no])]
 )
 CXXFLAGS="$TEMP_CXXFLAGS"
+
+TEMP_CFLAGS="$CFLAGS"
+CFLAGS="$ARGON2_AVX512F_CFLAGS $CFLAGS"
+AC_MSG_CHECKING([for Argon2 AVX512 intrinsics])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+    #include <immintrin.h>
+  ]], [[
+    __m512i v = _mm512_set1_epi32(0);
+    return _mm512_cvtsi512_si32(v);
+  ]])],
+ [ AC_MSG_RESULT([yes])
+   enable_argon2_avx512=yes
+   AC_DEFINE([ENABLE_ARGON2_AVX512], [1], [Define this symbol to build Argon2 AVX512 code]) ],
+ [ AC_MSG_RESULT([no]) ]
+)
+CFLAGS="$TEMP_CFLAGS"
+
+TEMP_CFLAGS="$CFLAGS"
+CFLAGS="$ARGON2_AVX2_CFLAGS $CFLAGS"
+AC_MSG_CHECKING([for Argon2 AVX2 intrinsics])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+    #include <immintrin.h>
+  ]], [[
+    __m256i l = _mm256_set1_epi32(0);
+    return _mm256_extract_epi32(l, 7);
+  ]])],
+ [ AC_MSG_RESULT([yes]);
+   enable_argon2_avx2=yes;
+   AC_DEFINE([ENABLE_ARGON2_AVX2], [1], [Define this symbol to build code that uses Argon2 AVX2 intrinsics]) ],
+ [ AC_MSG_RESULT([no])]
+)
+CFLAGS="$TEMP_CFLAGS"
+
+TEMP_CFLAGS="$CFLAGS"
+CFLAGS="$ARGON2_AVX512F_CFLAGS $CFLAGS"
+AC_MSG_CHECKING([for Argon2 AVX512 intrinsics])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+    #include <immintrin.h>
+  ]], [[
+    __m512i l = _mm512_set1_epi32(0);
+    return _mm512_cvtsi512_si32(l);
+  ]])],
+ [ AC_MSG_RESULT([yes]);
+   enable_argon2_avx512=yes;
+   AC_DEFINE([ENABLE_ARGON2_AVX512], [1], [Define this symbol to build code that uses Argon2 AVX512 intrinsics]) ],
+ [ AC_MSG_RESULT([no])]
+)
+CFLAGS="$TEMP_CFLAGS"
 
 # ARM
 AX_CHECK_COMPILE_FLAG([-march=armv8-a+crc+crypto], [ARM_CRC_CXXFLAGS="-march=armv8-a+crc+crypto"], [], [$CXXFLAG_WERROR])
@@ -1851,8 +1903,8 @@ AM_CONDITIONAL([HARDEN], [test "$use_hardening" = "yes"])
 AM_CONDITIONAL([ENABLE_SSE42], [test "$enable_sse42" = "yes"])
 AM_CONDITIONAL([ENABLE_SSE41], [test "$enable_sse41" = "yes"])
 AM_CONDITIONAL([ENABLE_AVX2], [test "$enable_avx2" = "yes"])
-AM_CONDITIONAL([ENABLE_ARGON2_AVX2], [test "$enable_avx2" = "yes"])
-AM_CONDITIONAL([ENABLE_ARGON2_AVX512], [test "$enable_avx512" = "yes"])
+AM_CONDITIONAL([ENABLE_ARGON2_AVX2], [test "$enable_argon2_avx2" = "xyes"])
+AM_CONDITIONAL([ENABLE_ARGON2_AVX512], [test "$enable_argon2_avx512" = "xyes"])
 AM_CONDITIONAL([ENABLE_X86_SHANI], [test "$enable_x86_shani" = "yes"])
 AM_CONDITIONAL([ENABLE_ARM_CRC], [test "$enable_arm_crc" = "yes"])
 AM_CONDITIONAL([ENABLE_ARM_SHANI], [test "$enable_arm_shani" = "yes"])
@@ -1920,6 +1972,8 @@ AC_SUBST(AVX2_CXXFLAGS)
 AC_SUBST(X86_SHANI_CXXFLAGS)
 AC_SUBST(ARM_CRC_CXXFLAGS)
 AC_SUBST(ARM_SHANI_CXXFLAGS)
+AC_SUBST(ARGON2_AVX2_CFLAGS)
+AC_SUBST(ARGON2_AVX512F_CFLAGS)
 AC_SUBST(LIBTOOL_APP_LDFLAGS)
 AC_SUBST(USE_SQLITE)
 AC_SUBST(USE_BDB)

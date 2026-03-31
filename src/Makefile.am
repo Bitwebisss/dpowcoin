@@ -650,17 +650,21 @@ crypto_libbitcoin_crypto_arm_shani_la_CPPFLAGS += -DENABLE_ARM_SHANI
 crypto_libbitcoin_crypto_arm_shani_la_SOURCES = crypto/sha256_arm_shani.cpp
 #
 
+# See explanation for -static in crypto_libbitcoin_crypto_base_la's LDFLAGS and
+# CXXFLAGS above
 crypto_libbitcoin_crypto_argon2_avx2_la_LDFLAGS = $(AM_LDFLAGS) -static
-crypto_libbitcoin_crypto_argon2_avx2_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS) -static
+crypto_libbitcoin_crypto_argon2_avx2_la_CFLAGS = $(AM_CFLAGS) $(PIE_FLAGS) -static
 crypto_libbitcoin_crypto_argon2_avx2_la_CPPFLAGS = $(AM_CPPFLAGS)
-crypto_libbitcoin_crypto_argon2_avx2_la_CXXFLAGS += $(AVX2_CXXFLAGS)
+crypto_libbitcoin_crypto_argon2_avx2_la_CFLAGS += $(ARGON2_AVX2_CFLAGS)
 crypto_libbitcoin_crypto_argon2_avx2_la_CPPFLAGS += -DENABLE_ARGON2_AVX2
 crypto_libbitcoin_crypto_argon2_avx2_la_SOURCES = crypto/argon2d/opt_avx2.c
 
+# See explanation for -static in crypto_libbitcoin_crypto_base_la's LDFLAGS and
+# CXXFLAGS above
 crypto_libbitcoin_crypto_argon2_avx512_la_LDFLAGS = $(AM_LDFLAGS) -static
-crypto_libbitcoin_crypto_argon2_avx512_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS) -static
+crypto_libbitcoin_crypto_argon2_avx512_la_CFLAGS = $(AM_CFLAGS) $(PIE_FLAGS) -static
 crypto_libbitcoin_crypto_argon2_avx512_la_CPPFLAGS = $(AM_CPPFLAGS)
-crypto_libbitcoin_crypto_argon2_avx512_la_CXXFLAGS += $(AVX512F_CXXFLAGS)
+crypto_libbitcoin_crypto_argon2_avx512_la_CFLAGS += $(ARGON2_AVX512F_CFLAGS)
 crypto_libbitcoin_crypto_argon2_avx512_la_CPPFLAGS += -DENABLE_ARGON2_AVX512
 crypto_libbitcoin_crypto_argon2_avx512_la_SOURCES = crypto/argon2d/opt_avx512.c
 
