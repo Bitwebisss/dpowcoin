@@ -204,7 +204,7 @@ static int AVXEnabled(void)
 
 /* -------------------------------------------------------------------------
  * argon2_fill_segment — global function pointer, default = SSE2 baseline.
- * On x86, Argon2AutoDetectImp() upgrades this to AVX2 or AVX-512 if available.
+ * On x86, Argon2AutoDetectImpl() upgrades this to AVX2 or AVX-512 if available.
  * fill_segment() is the public entry called by core.c — routes through ptr.
  * ------------------------------------------------------------------------- */
 void (*argon2_fill_segment)(const argon2_instance_t *instance,
@@ -216,10 +216,10 @@ void fill_segment(const argon2_instance_t *instance,
 }
 
 /* -------------------------------------------------------------------------
- * Argon2AutoDetectImp — x86 implementation.
+ * Argon2AutoDetectImpl — x86 implementation.
  * Non-x86 stub is in ref.c.
  * ------------------------------------------------------------------------- */
-const char *Argon2AutoDetectImp(void)
+const char *Argon2AutoDetectImpl(void)
 {
     const char *ret = "sse2";
     argon2_fill_segment = fill_segment_sse2;

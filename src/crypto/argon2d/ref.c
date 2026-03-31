@@ -14,6 +14,7 @@
  * You should have received a copy of both of these licenses along with this
  * software. If not, they may be obtained at the above URLs.
  */
+#include <compat/cpuid.h> /* defines HAVE_GETCPUID on x86 */
 
 #if !defined(HAVE_GETCPUID)
 
