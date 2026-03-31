@@ -433,9 +433,13 @@ ARGON2_PUBLIC size_t argon2_encodedlen(uint32_t t_cost, uint32_t m_cost,
 ARGON2_PUBLIC const char *Argon2AutoDetectImpl(void);
 
 #if defined(__cplusplus)
-}
+}  /* закрывает extern "C" со строки 26 */
 #include <string>
 inline std::string Argon2AutoDetect() {
     return std::string(Argon2AutoDetectImpl());
 }
+#else
+}  /* закрывает extern "C" для чистого C */
 #endif
+
+#endif /* ARGON2_H */
