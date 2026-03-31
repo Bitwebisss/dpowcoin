@@ -599,8 +599,8 @@ crypto_libbitcoin_crypto_base_la_SOURCES = \
   crypto/argon2d/encoding.h \
   crypto/argon2d/genkat.c \
   crypto/argon2d/genkat.h \
-  crypto/argon2d/opt.c \
-  crypto/argon2d/ref.c \
+  crypto/argon2d/opt.cpp \
+  crypto/argon2d/ref.cpp \
   crypto/argon2d/thread.c \
   crypto/argon2d/thread.h \
   crypto/argon2d/blake2/blake2-impl.h \
@@ -653,20 +653,20 @@ crypto_libbitcoin_crypto_arm_shani_la_SOURCES = crypto/sha256_arm_shani.cpp
 # See explanation for -static in crypto_libbitcoin_crypto_base_la's LDFLAGS and
 # CXXFLAGS above
 crypto_libbitcoin_crypto_argon2_avx2_la_LDFLAGS = $(AM_LDFLAGS) -static
-crypto_libbitcoin_crypto_argon2_avx2_la_CFLAGS = $(AM_CFLAGS) $(PIE_FLAGS) -static
+crypto_libbitcoin_crypto_argon2_avx2_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS) -static
 crypto_libbitcoin_crypto_argon2_avx2_la_CPPFLAGS = $(AM_CPPFLAGS)
-crypto_libbitcoin_crypto_argon2_avx2_la_CFLAGS += $(ARGON2_AVX2_CFLAGS)
+crypto_libbitcoin_crypto_argon2_avx2_la_CXXFLAGS += $(ARGON2_AVX2_CXXFLAGS)
 crypto_libbitcoin_crypto_argon2_avx2_la_CPPFLAGS += -DENABLE_ARGON2_AVX2
-crypto_libbitcoin_crypto_argon2_avx2_la_SOURCES = crypto/argon2d/opt_avx2.c
+crypto_libbitcoin_crypto_argon2_avx2_la_SOURCES = crypto/argon2d/opt_avx2.cpp
 
 # See explanation for -static in crypto_libbitcoin_crypto_base_la's LDFLAGS and
 # CXXFLAGS above
 crypto_libbitcoin_crypto_argon2_avx512_la_LDFLAGS = $(AM_LDFLAGS) -static
-crypto_libbitcoin_crypto_argon2_avx512_la_CFLAGS = $(AM_CFLAGS) $(PIE_FLAGS) -static
+crypto_libbitcoin_crypto_argon2_avx512_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS) -static
 crypto_libbitcoin_crypto_argon2_avx512_la_CPPFLAGS = $(AM_CPPFLAGS)
-crypto_libbitcoin_crypto_argon2_avx512_la_CFLAGS += $(ARGON2_AVX512F_CFLAGS)
+crypto_libbitcoin_crypto_argon2_avx512_la_CXXFLAGS += $(ARGON2_AVX512F_CXXFLAGS)
 crypto_libbitcoin_crypto_argon2_avx512_la_CPPFLAGS += -DENABLE_ARGON2_AVX512
-crypto_libbitcoin_crypto_argon2_avx512_la_SOURCES = crypto/argon2d/opt_avx512.c
+crypto_libbitcoin_crypto_argon2_avx512_la_SOURCES = crypto/argon2d/opt_avx512.cpp
 
 # consensus #
 libbitcoin_consensus_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
