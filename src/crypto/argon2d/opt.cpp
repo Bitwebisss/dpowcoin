@@ -251,13 +251,13 @@ const char *Argon2AutoDetectImpl(void)
         have_avx2    = (ebx >> 5)  & 1;
         have_avx512f = (ebx >> 16) & 1;
 
-#if defined(ENABLE_ARGON2_AVX512)
+#if defined(ENABLE_ARGON2_AVX512) && !defined(BUILD_BITCOIN_INTERNAL)
         if (have_avx512f && have_xsave && AVX512Enabled()) {
             argon2_fill_segment = fill_segment_avx512;
             ret = "avx512";
         } else
 #endif
-#if defined(ENABLE_ARGON2_AVX2)
+#if defined(ENABLE_ARGON2_AVX2) && !defined(BUILD_BITCOIN_INTERNAL)
         if (have_avx2 && have_avx && enabled_avx) {
             argon2_fill_segment = fill_segment_avx2;
             ret = "avx2";
