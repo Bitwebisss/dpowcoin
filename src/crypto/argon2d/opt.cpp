@@ -48,12 +48,12 @@
  * Forward declarations for separately-compiled ISA variants.
  * Mirrors the namespace forward-decls at the top of sha256.cpp.
  * ------------------------------------------------------------------------- */
-#if defined(ENABLE_ARGON2_AVX512)
+#if defined(ENABLE_ARGON2_AVX512) && !defined(BUILD_BITCOIN_INTERNAL)
 void fill_segment_avx512(const argon2_instance_t *instance,
                          argon2_position_t position);
 #endif
 
-#if defined(ENABLE_ARGON2_AVX2)
+#if defined(ENABLE_ARGON2_AVX2) && !defined(BUILD_BITCOIN_INTERNAL)
 void fill_segment_avx2(const argon2_instance_t *instance,
                        argon2_position_t position);
 #endif
