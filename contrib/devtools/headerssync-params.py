@@ -12,13 +12,13 @@ import random
 # Parameters:
 
 # Aim for still working fine at some point in the future. [datetime]
-TIME = datetime(2026, 10, 5)
+TIME = datetime(2029, 4, 1)
 
 # Expected block interval. [timedelta]
 BLOCK_INTERVAL = timedelta(seconds=300)
 
 # The number of headers corresponding to the minchainwork parameter. [headers]
-MINCHAINWORK_HEADERS = 700
+MINCHAINWORK_HEADERS = 190000
 
 # Combined processing bandwidth from all attackers to one victim. [bit/s]
 # 6 Gbit/s is approximately the speed at which a single thread of a Ryzen 5950X CPU thread can hash
