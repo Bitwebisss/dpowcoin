@@ -26,6 +26,9 @@
  *   - ENABLE_ARGON2_AVX2 / ENABLE_ARGON2_AVX512 gate separately-compiled
  *     ISA variants, same as ENABLE_AVX2 / ENABLE_SSE41 in sha256.cpp.
  */
+#if defined(HAVE_CONFIG_H)
+#include <config/bitcoin-config.h>
+#endif
 
 #if !defined(DISABLE_OPTIMIZED_ARGON2)
 #include <compat/cpuid.h>
