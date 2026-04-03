@@ -137,6 +137,7 @@ public:
         vSeeds.emplace_back("seed4.dpowcore.org."); //reserved
         vSeeds.emplace_back("seed5.dpowcore.org."); //reserved
         vSeeds.emplace_back("seed6.dpowcore.org."); //reserved
+        vSeeds.emplace_back("seed7.dpowcore.org."); //reserved
         vSeeds.emplace_back("seeddpowcoin1.bitwebcore.net.");
         vSeeds.emplace_back("seeddpowcoin2.bitwebcore.net.");
 
