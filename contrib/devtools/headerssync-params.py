@@ -24,7 +24,7 @@ MINCHAINWORK_HEADERS = 190000
 # 6 Gbit/s is approximately the speed at which a single thread of a Ryzen 5950X CPU thread can hash
 # headers. In practice, the victim's network bandwidth and network processing overheads probably
 # impose a far lower number, but it's a useful upper bound.
-ATTACK_BANDWIDTH = 6000000000
+ATTACK_BANDWIDTH = 70000
 
 # How much additional permanent memory usage are attackers (jointly) allowed to cause in the victim,
 # expressed as fraction of the normal memory usage due to mainchain growth, for the duration the
