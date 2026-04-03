@@ -118,7 +118,7 @@ HEADER_BATCH_COUNT = 2000
 RANDOMIZE_OFFSET = True
 
 # Timestamp of the genesis block
-GENESIS_TIME = datetime(2024, 3, 19)
+GENESIS_TIME = datetime(2024, 4, 19)
 
 # Derived values:
 
