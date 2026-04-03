@@ -228,7 +228,7 @@ bool PermittedDifficultyTransition(const Consensus::Params& params, int64_t heig
     return true;
 }
 */
-/ ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // PermittedDifficultyTransition — restored for LWMA3 + Dual PoW
 // ---------------------------------------------------------------------------
 //
