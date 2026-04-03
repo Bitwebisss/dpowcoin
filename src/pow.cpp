@@ -176,9 +176,10 @@ unsigned int Lwma3CalculateNextWorkRequired(const CBlockIndex* pindexLast, const
 
 // Check that on difficulty adjustments, the new difficulty does not increase
 // or decrease beyond the permitted limits.
+/*
 bool PermittedDifficultyTransition(const Consensus::Params& params, int64_t height, uint32_t old_nbits, uint32_t new_nbits)
 {
-    /*
+    
     if (params.fPowAllowMinDifficultyBlocks) return true;
 
     if (height % params.DifficultyAdjustmentInterval() == 0) {
@@ -223,7 +224,155 @@ bool PermittedDifficultyTransition(const Consensus::Params& params, int64_t heig
     } else if (old_nbits != new_nbits) {
         return false;
     }
-    */
+    
+    return true;
+}
+*/
+/ ---------------------------------------------------------------------------
+// PermittedDifficultyTransition — restored for LWMA3 + Dual PoW
+// ---------------------------------------------------------------------------
+//
+// PURPOSE:
+//   Called by HeadersSyncState (headerssync.cpp) during PRESYNC and REDOWNLOAD
+//   phases for EVERY single block. Provides anti-DoS protection: rejects chains
+//   where nBits changes in ways that are mathematically impossible under LWMA3,
+//   preventing an attacker from feeding fake header chains.
+//
+// WHY THE ORIGINAL BITCOIN VERSION DOES NOT WORK HERE:
+//   Bitcoin checks difficulty only at 2016-block intervals (±4x per interval),
+//   and requires identical nBits between intervals. With LWMA3, difficulty
+//   adjusts every block. The original `else if (old_nbits != new_nbits)` branch
+//   would reject every block after the first, completely breaking sync.
+//
+// LWMA3 MATHEMATICAL UPPER BOUND (the critical anti-DoS check):
+//
+//   nextTarget = avgTarget * sumWeightedSolvetimes
+//   avgTarget  = Σ(target_i / N / k),   k = N*(N+1)*T/2
+//
+//   The key line in the algorithm:
+//     solvetime = std::min(6 * T, thisTimestamp - previousTimestamp);
+//
+//   Maximum possible sumWeightedSolvetimes (all N solvetimes at their cap 6*T):
+//     sumWeightedSolvetimes_max = 6*T * N*(N+1)/2 = 6*k
+//     nextTarget_max = avgTarget * 6
+//
+//   Therefore: new_target can NEVER exceed old_target * 6.
+//   This is a hard mathematical guarantee from the algorithm itself.
+//   No legitimate block in this network can violate this. An attacker
+//   presenting a header with new_target > old_target * 6 is lying about
+//   their nBits, and we reject them.
+//
+//   Real per-block maximum for adjacent blocks (N=288, T=300):
+//     ratio_max = 1 + 2*(6T-1)/((N+1)*T) ≈ 1.0415 (4.15%)
+//   We use 6x (the whole-window theoretical maximum) — conservative and safe.
+//
+// WHY WE DO NOT CHECK A LOWER BOUND:
+//
+//   A lower bound would prevent target from dropping too fast (difficulty rising
+//   too fast). However, this attack vector is already fully covered by
+//   CheckProofOfWork: if an attacker claims very high difficulty (very low
+//   target), they must actually produce a valid hash below that target —
+//   which requires real hashpower they don't have. Adding a lower bound here
+//   provides no additional security and risks false positives on historical
+//   blocks from this existing network.
+//
+// BOOTSTRAPPING WINDOW (L=577, must match Lwma3CalculateNextWorkRequired):
+//
+//   LWMA3 logic: if (pindexLast->nHeight <= 577) return powLimit
+//   For block at height h: pindexLast->nHeight = h-1
+//     h-1 <= 577  =>  h <= 578  =>  blocks at heights 1..578 have nBits = powLimit
+//
+//   In PermittedDifficultyTransition, 'height' = height of the NEW block:
+//     height <= 578: new_nbits MUST equal powLimit (bootstrapping window)
+//     height >= 579: LWMA3 is active, apply 6x upper bound check
+//
+//   The transition at height 579 (first LWMA3 block) is handled automatically:
+//     old_target = powLimit, max_permitted = min(powLimit*6, powLimit) = powLimit
+//     LWMA3 always caps: if (nextTarget > powLimit) nextTarget = powLimit
+//     So new_target <= powLimit = max_permitted — always satisfied.
+//     No special-case branch needed for height 579.
+//
+// DUAL PoW (Yespower + Argon2id):
+//
+//   Both algorithms share the SAME nBits target. A block is valid only when:
+//     hash_yespower  <= target  AND  hash_argon2id <= target
+//   P(valid per nonce) = (target/2^256)^2
+//
+//   LWMA3 observes real block times, which already reflect the dual-PoW
+//   probability. The 6x upper bound derived from the solvetime cap is
+//   independent of the number of PoW algorithms — it holds for both.
+//   One nBits check here covers both algorithms simultaneously.
+//
+// ---------------------------------------------------------------------------
+ 
+bool PermittedDifficultyTransition(const Consensus::Params& params, int64_t height, uint32_t old_nbits, uint32_t new_nbits)
+{
+    // Testnet/regtest: min-difficulty blocks are permitted, any transition is valid
+    if (params.fPowAllowMinDifficultyBlocks) return true;
+ 
+    bool fNegative, fOverflow;
+    const arith_uint256 pow_limit = UintToArith256(params.powLimit);
+    const uint32_t pow_limit_compact = pow_limit.GetCompact();
+ 
+    // Validate old_nbits: must be a well-formed, in-range target
+    arith_uint256 old_target;
+    old_target.SetCompact(old_nbits, &fNegative, &fOverflow);
+    if (fNegative || fOverflow || old_target == 0 || old_target > pow_limit) {
+        return false;
+    }
+ 
+    // Validate new_nbits: must be well-formed
+    arith_uint256 new_target;
+    new_target.SetCompact(new_nbits, &fNegative, &fOverflow);
+    if (fNegative || fOverflow || new_target == 0) {
+        return false;
+    }
+ 
+    // Hard ceiling: target can never exceed powLimit under any circumstances
+    if (new_target > pow_limit) {
+        return false;
+    }
+ 
+    // -------------------------------------------------------------------
+    // LWMA3 Bootstrapping Window
+    //
+    // L=577 matches the constant in Lwma3CalculateNextWorkRequired.
+    // Blocks at heights 1..578 must have nBits == powLimit.
+    // Any deviation means a forged or corrupted header.
+    // -------------------------------------------------------------------
+    static constexpr int64_t LWMA3_L = 577; // must match L in Lwma3CalculateNextWorkRequired
+ 
+    if (height <= LWMA3_L + 1) { // blocks at heights 1..578
+        return (new_nbits == pow_limit_compact);
+    }
+ 
+    // -------------------------------------------------------------------
+    // Full LWMA3 operation (height >= 579)
+    //
+    // Upper bound: new_target <= old_target * 6
+    //
+    // Derived from: solvetime = std::min(6 * T, ...)
+    // The maximum possible nextTarget under any circumstances is avgTarget * 6.
+    // Since avgTarget ≈ old_target (weighted average of recent N block targets),
+    // no legitimate block can have new_target > old_target * 6.
+    // -------------------------------------------------------------------
+    static constexpr int64_t LWMA3_MAX_TARGET_MULTIPLIER = 6;
+ 
+    arith_uint256 max_permitted_target;
+    if (old_target > pow_limit / LWMA3_MAX_TARGET_MULTIPLIER) {
+        // old_target * 6 would overflow past pow_limit — cap to pow_limit
+        max_permitted_target = pow_limit;
+    } else {
+        max_permitted_target = old_target * LWMA3_MAX_TARGET_MULTIPLIER;
+        if (max_permitted_target > pow_limit) {
+            max_permitted_target = pow_limit;
+        }
+    }
+ 
+    if (new_target > max_permitted_target) {
+        return false;
+    }
+ 
     return true;
 }
 
