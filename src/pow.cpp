@@ -179,7 +179,7 @@ unsigned int Lwma3CalculateNextWorkRequired(const CBlockIndex* pindexLast, const
 /*
 bool PermittedDifficultyTransition(const Consensus::Params& params, int64_t height, uint32_t old_nbits, uint32_t new_nbits)
 {
-    
+
     if (params.fPowAllowMinDifficultyBlocks) return true;
 
     if (height % params.DifficultyAdjustmentInterval() == 0) {
@@ -224,7 +224,7 @@ bool PermittedDifficultyTransition(const Consensus::Params& params, int64_t heig
     } else if (old_nbits != new_nbits) {
         return false;
     }
-    
+
     return true;
 }
 */
@@ -234,28 +234,13 @@ bool PermittedDifficultyTransition(const Consensus::Params& params, int64_t heig
     if (params.fPowAllowMinDifficultyBlocks) return true;
 
     bool fNegative, fOverflow;
-    const arith_uint256 pow_limit = UintToArith256(params.powLimit);
-
-    arith_uint256 old_target;
-    old_target.SetCompact(old_nbits, &fNegative, &fOverflow);
-    if (fNegative || fOverflow || old_target == 0 || old_target > pow_limit)
-        return false;
-
     arith_uint256 new_target;
     new_target.SetCompact(new_nbits, &fNegative, &fOverflow);
-    if (fNegative || fOverflow || new_target == 0 || new_target > pow_limit)
+
+    if (fNegative || fOverflow || new_target == 0 || new_target > UintToArith256(params.powLimit))
         return false;
 
-    arith_uint256 max_permitted;
-    if (old_target > pow_limit / 6) {
-        max_permitted = pow_limit;
-    } else {
-        max_permitted = old_target * 6;
-        if (max_permitted > pow_limit)
-            max_permitted = pow_limit;
-    }
-
-    return (new_target <= max_permitted);
+    return true;
 }
 
 bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params& params)
