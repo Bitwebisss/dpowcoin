@@ -65,9 +65,9 @@ static constexpr int32_t MAX_OUTBOUND_PEERS_TO_PROTECT_FROM_DISCONNECT = 4;
 /** Timeout for (unprotected) outbound peers to sync to our chainwork */
 static constexpr auto CHAIN_SYNC_TIMEOUT{20min};
 /** How frequently to check for stale tips */
-static constexpr auto STALE_CHECK_INTERVAL{5min};
+static constexpr auto STALE_CHECK_INTERVAL{10min};
 /** How frequently to check for extra outbound peers and disconnect */
-static constexpr auto EXTRA_PEER_CHECK_INTERVAL{30s};
+static constexpr auto EXTRA_PEER_CHECK_INTERVAL{45s};
 /** Minimum time an outbound-peer-eviction candidate must be connected for, in order to evict */
 static constexpr auto MINIMUM_CONNECT_TIME{30s};
 /** SHA256("main address relay")[0:8] */
@@ -2910,11 +2910,21 @@ void PeerManagerImpl::ProcessHeadersMessage(CNode& pfrom, Peer& peer,
         //   during the REDOWNLOAD phase of a low-work headers sync.
         // So just check whether we still have headers that we need to process,
         // or not.
-        if (headers.empty()) {
-            return;
-        }
-
         have_headers_sync = !!peer.m_headers_sync;
+    }
+
+    // headers is a local variable and safe to read after the lock is released.
+    // If PRESYNC consumed the batch, extend the sync timeout and return.
+    // Without this, the one-shot timeout set at sync start expires long before
+    // PRESYNC + REDOWNLOAD complete on a chain with many headers.
+    if (headers.empty()) {
+        LOCK(cs_main);
+        CNodeState* nodestate = State(pfrom.GetId());
+        if (nodestate && nodestate->fSyncStarted &&
+                nodestate->m_headers_sync_timeout != std::chrono::microseconds::max()) {
+            nodestate->m_headers_sync_timeout = GetTime<std::chrono::microseconds>() + HEADERS_RESPONSE_TIME;
+        }
+        return;
     }
 
     // Do these headers connect to something in our block index?
@@ -2980,6 +2990,17 @@ void PeerManagerImpl::ProcessHeadersMessage(CNode& pfrom, Peer& peer,
         }
     }
     assert(pindexLast);
+
+    // Extend the sync timeout on each successfully validated batch (covers
+    // REDOWNLOAD phase and normal IBD where m_best_header is still far behind).
+    {
+        LOCK(cs_main);
+        CNodeState* nodestate = State(pfrom.GetId());
+        if (nodestate && nodestate->fSyncStarted &&
+                nodestate->m_headers_sync_timeout != std::chrono::microseconds::max()) {
+            nodestate->m_headers_sync_timeout = GetTime<std::chrono::microseconds>() + HEADERS_RESPONSE_TIME;
+        }
+    }
 
     // Consider fetching more headers if we are not using our headers-sync mechanism.
     if (nCount == MAX_HEADERS_RESULTS && !have_headers_sync) {
