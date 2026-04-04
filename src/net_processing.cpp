@@ -2918,11 +2918,8 @@ void PeerManagerImpl::ProcessHeadersMessage(CNode& pfrom, Peer& peer,
     // Without this, the one-shot timeout set at sync start expires long before
     // PRESYNC + REDOWNLOAD complete on a chain with many headers.
     if (headers.empty()) {
-        LOCK(cs_main);
-        CNodeState* nodestate = State(pfrom.GetId());
-        if (nodestate && nodestate->fSyncStarted &&
-                nodestate->m_headers_sync_timeout != std::chrono::microseconds::max()) {
-            nodestate->m_headers_sync_timeout = GetTime<std::chrono::microseconds>() + HEADERS_RESPONSE_TIME;
+        if (peer.m_headers_sync_timeout != std::chrono::microseconds::max()) {
+            peer.m_headers_sync_timeout = GetTime<std::chrono::microseconds>() + HEADERS_RESPONSE_TIME;
         }
         return;
     }
@@ -2993,13 +2990,8 @@ void PeerManagerImpl::ProcessHeadersMessage(CNode& pfrom, Peer& peer,
 
     // Extend the sync timeout on each successfully validated batch (covers
     // REDOWNLOAD phase and normal IBD where m_best_header is still far behind).
-    {
-        LOCK(cs_main);
-        CNodeState* nodestate = State(pfrom.GetId());
-        if (nodestate && nodestate->fSyncStarted &&
-                nodestate->m_headers_sync_timeout != std::chrono::microseconds::max()) {
-            nodestate->m_headers_sync_timeout = GetTime<std::chrono::microseconds>() + HEADERS_RESPONSE_TIME;
-        }
+    if (peer.m_headers_sync_timeout != std::chrono::microseconds::max()) {
+        peer.m_headers_sync_timeout = GetTime<std::chrono::microseconds>() + HEADERS_RESPONSE_TIME;
     }
 
     // Consider fetching more headers if we are not using our headers-sync mechanism.
