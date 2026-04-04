@@ -3841,6 +3841,14 @@ bool HasValidProofOfWork(const std::vector<CBlockHeader>& headers, const Consens
             });
 }
 
+bool HasValidProofOfWorkPresync(const std::vector<CBlockHeader>& headers, const Consensus::Params& consensusParams)
+{
+    return std::all_of(headers.cbegin(), headers.cend(),
+        [&](const auto& header) { 
+            return CheckProofOfWork(header.GetYespowerPoWHash(), header.nBits, consensusParams);
+        });
+}
+
 bool IsBlockMutated(const CBlock& block, bool check_witness_root)
 {
     BlockValidationState state;

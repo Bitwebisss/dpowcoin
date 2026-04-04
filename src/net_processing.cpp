@@ -2482,13 +2482,18 @@ void PeerManagerImpl::SendBlockTransactions(CNode& pfrom, Peer& peer, const CBlo
 
 bool PeerManagerImpl::CheckHeadersPoW(const std::vector<CBlockHeader>& headers, const Consensus::Params& consensusParams, Peer& peer)
 {
-    // Do these headers have proof-of-work matching what's claimed?
-    if (!HasValidProofOfWork(headers, consensusParams)) {
+    bool in_presync;
+    {
+        LOCK(peer.m_headers_sync_mutex);
+        in_presync = peer.m_headers_sync &&
+                     peer.m_headers_sync->GetState() == HeadersSyncState::State::PRESYNC;
+    }
+
+    if (!(in_presync ? HasValidProofOfWorkPresync(headers, consensusParams)
+                     : HasValidProofOfWork(headers, consensusParams))) {
         Misbehaving(peer, 100, "header with invalid proof of work");
         return false;
     }
-
-    // Are these headers connected to each other?
     if (!CheckHeadersAreContinuous(headers)) {
         Misbehaving(peer, 20, "non-continuous headers sequence");
         return false;
