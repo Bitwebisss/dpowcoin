@@ -3845,7 +3845,7 @@ bool HasValidProofOfWorkPresync(const std::vector<CBlockHeader>& headers, const 
 {
     return std::all_of(headers.cbegin(), headers.cend(),
         [&](const auto& header) { 
-            return CheckProofOfWork(header.GetArgon2idPoWHash(), header.nBits, consensusParams);
+            return CheckProofOfWork(header.GetYespowerPoWHash(), header.nBits, consensusParams);
         });
 }
 
