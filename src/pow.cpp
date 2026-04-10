@@ -12,10 +12,17 @@
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
-	
     assert(pindexLast != nullptr);
-	/*
-    
+
+    if (params.fPowNoRetargeting)
+        return pindexLast->nBits;
+
+    if (params.fPowAllowMinDifficultyBlocks)
+        return UintToArith256(params.powLimit).GetCompact();
+
+    /*
+    unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
+
     // Only change once per difficulty adjustment interval
     if ((pindexLast->nHeight+1) % params.DifficultyAdjustmentInterval() != 0)
     {
@@ -23,7 +30,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         {
             // Special difficulty rule for testnet:
             // If the new block's timestamp is more than 2* 10 minutes
-            // then allow mining of a min-difficulty block.
+            // then it MUST be a min-difficulty block.
             if (pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.nPowTargetSpacing*2)
                 return nProofOfWorkLimit;
             else
@@ -37,21 +44,14 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         }
         return pindexLast->nBits;
     }
-    
-    // Go back by what we want to be 14 days worth of blocks
-	
 
-	
+    // Go back by what we want to be 14 days worth of blocks
     int nHeightFirst = pindexLast->nHeight - (params.DifficultyAdjustmentInterval()-1);
     assert(nHeightFirst >= 0);
-
-    if (nHeightFirst < 0) {
-        return nProofOfWorkLimit;
-    }
-
     const CBlockIndex* pindexFirst = pindexLast->GetAncestor(nHeightFirst);
     assert(pindexFirst);
     */
+
     return Lwma3CalculateNextWorkRequired(pindexLast, params);
 }
 
