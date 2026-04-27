@@ -634,6 +634,15 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
                 txFirst.push_back(pblock->vtx[0]);
             pblock->hashMerkleRoot = BlockMerkleRoot(*pblock);
             pblock->nNonce = bi.nonce;
+            // code for regenerate BLOCKINFO
+            /*
+            while (!CheckProofOfWork(block.GetArgon2idPoWHash(), block.nBits, Assert(m_node.chainman)->GetParams().GetConsensus())) {
+               ++block.nNonce;
+            }
+            FILE* f = fopen("/tmp/blockinfo.txt", "a");
+            fprintf(f, "{%u, %u},\n", bi.extranonce, block.nNonce);
+            fclose(f);
+            */
         }
         std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(*pblock);
         BOOST_CHECK(Assert(m_node.chainman)->ProcessNewBlock(shared_pblock, true, true, nullptr));

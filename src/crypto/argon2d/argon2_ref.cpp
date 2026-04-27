@@ -34,6 +34,10 @@
 
 #include <compat/cpuid.h>  /* defines HAVE_GETCPUID on x86 */
 
+#if defined(HAVE_CONFIG_H)
+#include <config/bitcoin-config.h>
+#endif
+
 #include <cstdint>
 #include <cstring>
 #include <cstdlib>
