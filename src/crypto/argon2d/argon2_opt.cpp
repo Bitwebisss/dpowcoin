@@ -80,19 +80,23 @@ void fill_segment_avx512(const argon2_instance_t *instance,
 /* -------------------------------------------------------------------------
  * AVX OS-enable checks — same helpers as sha256.cpp.
  * ------------------------------------------------------------------------- */
+#if (defined(ENABLE_ARGON2_AVX2) || defined(ENABLE_ARGON2_AVX512)) && !defined(BUILD_BITCOIN_INTERNAL)
 static int AVXEnabled(void)
 {
     uint32_t a, d;
     __asm__("xgetbv" : "=a"(a), "=d"(d) : "c"(0));
     return (a & 6) == 6;
 }
+#endif
 
+#if defined(ENABLE_ARGON2_AVX512) && !defined(BUILD_BITCOIN_INTERNAL)
 static int AVX512Enabled(void)
 {
     uint32_t a, d;
     __asm__("xgetbv" : "=a"(a), "=d"(d) : "c"(0));
     return (a & 0xE6) == 0xE6;
 }
+#endif
 
 /* -------------------------------------------------------------------------
  * argon2_fill_segment — global function pointer.
@@ -132,10 +136,11 @@ const char *Argon2AutoDetectImpl(uint8_t use_implementation)
         have_sse2   = (edx >> 26) & 1;
         have_ssse3  = (ecx >> 9)  & 1;
         enabled_avx = 0;
+#if (defined(ENABLE_ARGON2_AVX2) || defined(ENABLE_ARGON2_AVX512)) && !defined(BUILD_BITCOIN_INTERNAL)
         if (have_xsave && have_avx) {
             enabled_avx = AVXEnabled();
         }
-
+#endif
         GetCPUID(7, 0, eax, ebx, ecx, edx);
         have_avx2    = (ebx >> 5)  & 1;
         have_avx512f = (ebx >> 16) & 1;
