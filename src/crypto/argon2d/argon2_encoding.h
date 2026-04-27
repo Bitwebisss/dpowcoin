@@ -15,9 +15,10 @@
  * software. If not, they may be obtained at the above URLs.
  */
 
-#ifndef ENCODING_H
-#define ENCODING_H
-#include "argon2.h"
+#ifndef BITCOIN_CRYPTO_ARGON2D_ARGON2_ENCODING_H
+#define BITCOIN_CRYPTO_ARGON2D_ARGON2_ENCODING_H
+
+#include <crypto/argon2d/argon2_types.h>
 
 #define ARGON2_MAX_DECODED_LANES UINT32_C(255)
 #define ARGON2_MIN_DECODED_SALT_LEN UINT32_C(8)
@@ -54,4 +55,4 @@ size_t b64len(uint32_t len);
 /* Returns the length of the encoded number num */
 size_t numlen(uint32_t num);
 
-#endif
+#endif // BITCOIN_CRYPTO_ARGON2D_ARGON2_ENCODING_H

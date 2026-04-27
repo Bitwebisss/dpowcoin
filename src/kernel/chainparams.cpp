@@ -83,10 +83,10 @@ public:
         consensus.SegwitHeight = 2;
         consensus.MinBIP9WarningHeight = 4033; // segwit activation height + miner confirmation window
         consensus.powLimit = uint256S("001fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-        consensus.nPowTargetTimespan = 5 * 60;
+        // consensus.nPowTargetTimespan = 5 * 60;
         consensus.nPowTargetSpacing = 5 * 60;
         consensus.lwmaAveragingWindow = 576;
-        consensus.fPowAllowMinDifficultyBlocks = false;
+        // consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = false;
         consensus.nRuleChangeActivationThreshold = 3628; // ~ 90% of 4032
         consensus.nMinerConfirmationWindow = 4032; //two weeks
@@ -137,7 +137,6 @@ public:
         vSeeds.emplace_back("seed4.dpowcore.org."); //reserved
         vSeeds.emplace_back("seed5.dpowcore.org."); //reserved
         vSeeds.emplace_back("seed6.dpowcore.org."); //reserved
-        vSeeds.emplace_back("seed7.dpowcore.org."); //reserved
         vSeeds.emplace_back("seeddpowcoin1.bitwebcore.net.");
         vSeeds.emplace_back("seeddpowcoin2.bitwebcore.net.");
 
@@ -194,10 +193,10 @@ public:
         consensus.SegwitHeight = 2;
         consensus.MinBIP9WarningHeight = 4033;
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-        consensus.nPowTargetTimespan = 5 * 60;
+        // consensus.nPowTargetTimespan = 5 * 60;
         consensus.nPowTargetSpacing = 5 * 60;
         consensus.lwmaAveragingWindow = 576;
-        consensus.fPowAllowMinDifficultyBlocks = true;
+        // consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = false;
         consensus.nRuleChangeActivationThreshold = 3024; // 75% for testchains
         consensus.nMinerConfirmationWindow = 4032; // two weeks
@@ -332,10 +331,10 @@ public:
         consensus.BIP66Height = 1;
         consensus.CSVHeight = 1;
         consensus.SegwitHeight = 1;
-        consensus.nPowTargetTimespan = 5 * 60;
+        // consensus.nPowTargetTimespan = 5 * 60;
         consensus.nPowTargetSpacing = 5 * 60;
         consensus.lwmaAveragingWindow = 576;
-        consensus.fPowAllowMinDifficultyBlocks = false;
+        // consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = false;
         consensus.nRuleChangeActivationThreshold = 3628; // ~90% of 4032
         consensus.nMinerConfirmationWindow = 4032; // two weeks
@@ -413,10 +412,10 @@ public:
         consensus.SegwitHeight = 0; // Always active unless overridden
         consensus.MinBIP9WarningHeight = 0;
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-        consensus.nPowTargetTimespan = 5 * 60; // two weeks
+        // consensus.nPowTargetTimespan = 5 * 60; // two weeks
         consensus.nPowTargetSpacing = 5 * 60;
-        consensus.lwmaAveragingWindow = 576;
-        consensus.fPowAllowMinDifficultyBlocks = true;
+        consensus.lwmaAveragingWindow = 144;
+        // consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = true;
         consensus.nRuleChangeActivationThreshold = 108; // 75% for testchains
         consensus.nMinerConfirmationWindow = 144; // Faster than normal for regtest (144 instead of 4032)

@@ -15,12 +15,12 @@
  * software. If not, they may be obtained at the above URLs.
  */
 
-#include <stdint.h>
-#include <string.h>
-#include <stdio.h>
+#include <cstdint>
+#include <cstring>
+#include <cstdio>
 
-#include "blake2.h"
-#include "blake2-impl.h"
+#include <crypto/argon2d/blake2/blake2.h>
+#include <crypto/argon2d/blake2/blake2-impl.h>
 
 void clear_internal_memory(void *v, size_t n);
 
@@ -46,14 +46,14 @@ static const unsigned int blake2b_sigma[12][16] = {
 };
 
 static BLAKE2_INLINE void blake2b_set_lastnode(blake2b_state *S) {
-    S->f[1] = (uint64_t)-1;
+    S->f[1] = ~uint64_t{0};
 }
 
 static BLAKE2_INLINE void blake2b_set_lastblock(blake2b_state *S) {
     if (S->last_node) {
         blake2b_set_lastnode(S);
     }
-    S->f[0] = (uint64_t)-1;
+    S->f[0] = ~uint64_t{0};
 }
 
 static BLAKE2_INLINE void blake2b_increment_counter(blake2b_state *S,
@@ -72,11 +72,11 @@ static BLAKE2_INLINE void blake2b_init0(blake2b_state *S) {
     memcpy(S->h, blake2b_IV, sizeof(S->h));
 }
 
-int blake2b_init_param(blake2b_state *S, const blake2b_param *P) {
-    const unsigned char *p = (const unsigned char *)P;
+int argon2d_blake2b_init_param(blake2b_state *S, const blake2b_param *P) {
+    const unsigned char *p = reinterpret_cast<const unsigned char *>(P);
     unsigned int i;
 
-    if (NULL == P || NULL == S) {
+    if (nullptr == P || nullptr == S) {
         return -1;
     }
 
@@ -90,10 +90,10 @@ int blake2b_init_param(blake2b_state *S, const blake2b_param *P) {
 }
 
 /* Sequential blake2b initialization */
-int blake2b_init(blake2b_state *S, size_t outlen) {
+int argon2d_blake2b_init(blake2b_state *S, size_t outlen) {
     blake2b_param P;
 
-    if (S == NULL) {
+    if (S == nullptr) {
         return -1;
     }
 
@@ -103,7 +103,7 @@ int blake2b_init(blake2b_state *S, size_t outlen) {
     }
 
     /* Setup Parameter Block for unkeyed BLAKE2 */
-    P.digest_length = (uint8_t)outlen;
+    P.digest_length = static_cast<uint8_t>(outlen);
     P.key_length = 0;
     P.fanout = 1;
     P.depth = 1;
@@ -115,14 +115,14 @@ int blake2b_init(blake2b_state *S, size_t outlen) {
     memset(P.salt, 0, sizeof(P.salt));
     memset(P.personal, 0, sizeof(P.personal));
 
-    return blake2b_init_param(S, &P);
+    return argon2d_blake2b_init_param(S, &P);
 }
 
-int blake2b_init_key(blake2b_state *S, size_t outlen, const void *key,
+int argon2d_blake2b_init_key(blake2b_state *S, size_t outlen, const void *key,
                      size_t keylen) {
     blake2b_param P;
 
-    if (S == NULL) {
+    if (S == nullptr) {
         return -1;
     }
 
@@ -131,14 +131,14 @@ int blake2b_init_key(blake2b_state *S, size_t outlen, const void *key,
         return -1;
     }
 
-    if ((key == 0) || (keylen == 0) || (keylen > BLAKE2B_KEYBYTES)) {
+    if ((key == nullptr) || (keylen == 0) || (keylen > BLAKE2B_KEYBYTES)) {
         blake2b_invalidate_state(S);
         return -1;
     }
 
     /* Setup Parameter Block for keyed BLAKE2 */
-    P.digest_length = (uint8_t)outlen;
-    P.key_length = (uint8_t)keylen;
+    P.digest_length = static_cast<uint8_t>(outlen);
+    P.key_length = static_cast<uint8_t>(keylen);
     P.fanout = 1;
     P.depth = 1;
     P.leaf_length = 0;
@@ -149,7 +149,7 @@ int blake2b_init_key(blake2b_state *S, size_t outlen, const void *key,
     memset(P.salt, 0, sizeof(P.salt));
     memset(P.personal, 0, sizeof(P.personal));
 
-    if (blake2b_init_param(S, &P) < 0) {
+    if (argon2d_blake2b_init_param(S, &P) < 0) {
         blake2b_invalidate_state(S);
         return -1;
     }
@@ -158,7 +158,7 @@ int blake2b_init_key(blake2b_state *S, size_t outlen, const void *key,
         uint8_t block[BLAKE2B_BLOCKBYTES];
         memset(block, 0, BLAKE2B_BLOCKBYTES);
         memcpy(block, key, keylen);
-        blake2b_update(S, block, BLAKE2B_BLOCKBYTES);
+        argon2d_blake2b_update(S, block, BLAKE2B_BLOCKBYTES);
         /* Burn the key from stack */
         clear_internal_memory(block, BLAKE2B_BLOCKBYTES);
     }
@@ -223,15 +223,15 @@ static void blake2b_compress(blake2b_state *S, const uint8_t *block) {
 #undef ROUND
 }
 
-int blake2b_update(blake2b_state *S, const void *in, size_t inlen) {
-    const uint8_t *pin = (const uint8_t *)in;
+int argon2d_blake2b_update(blake2b_state *S, const void *in, size_t inlen) {
+    const uint8_t *pin = static_cast<const uint8_t *>(in);
 
     if (inlen == 0) {
         return 0;
     }
 
     /* Sanity check */
-    if (S == NULL || in == NULL) {
+    if (S == nullptr || in == nullptr) {
         return -1;
     }
 
@@ -259,16 +259,16 @@ int blake2b_update(blake2b_state *S, const void *in, size_t inlen) {
         }
     }
     memcpy(&S->buf[S->buflen], pin, inlen);
-    S->buflen += (unsigned int)inlen;
+    S->buflen += static_cast<unsigned int>(inlen);
     return 0;
 }
 
-int blake2b_final(blake2b_state *S, void *out, size_t outlen) {
+int argon2d_blake2b_final(blake2b_state *S, void *out, size_t outlen) {
     uint8_t buffer[BLAKE2B_OUTBYTES] = {0};
     unsigned int i;
 
     /* Sanity checks */
-    if (S == NULL || out == NULL || outlen < S->outlen) {
+    if (S == nullptr || out == nullptr || outlen < S->outlen) {
         return -1;
     }
 
@@ -293,38 +293,38 @@ int blake2b_final(blake2b_state *S, void *out, size_t outlen) {
     return 0;
 }
 
-int blake2b(void *out, size_t outlen, const void *in, size_t inlen,
+int argon2d_blake2b(void *out, size_t outlen, const void *in, size_t inlen,
             const void *key, size_t keylen) {
     blake2b_state S;
     int ret = -1;
 
     /* Verify parameters */
-    if (NULL == in && inlen > 0) {
+    if (nullptr == in && inlen > 0) {
         goto fail;
     }
 
-    if (NULL == out || outlen == 0 || outlen > BLAKE2B_OUTBYTES) {
+    if (nullptr == out || outlen == 0 || outlen > BLAKE2B_OUTBYTES) {
         goto fail;
     }
 
-    if ((NULL == key && keylen > 0) || keylen > BLAKE2B_KEYBYTES) {
+    if ((nullptr == key && keylen > 0) || keylen > BLAKE2B_KEYBYTES) {
         goto fail;
     }
 
     if (keylen > 0) {
-        if (blake2b_init_key(&S, outlen, key, keylen) < 0) {
+        if (argon2d_blake2b_init_key(&S, outlen, key, keylen) < 0) {
             goto fail;
         }
     } else {
-        if (blake2b_init(&S, outlen) < 0) {
+        if (argon2d_blake2b_init(&S, outlen) < 0) {
             goto fail;
         }
     }
 
-    if (blake2b_update(&S, in, inlen) < 0) {
+    if (argon2d_blake2b_update(&S, in, inlen) < 0) {
         goto fail;
     }
-    ret = blake2b_final(&S, out, outlen);
+    ret = argon2d_blake2b_final(&S, out, outlen);
 
 fail:
     clear_internal_memory(&S, sizeof(S));
@@ -332,8 +332,8 @@ fail:
 }
 
 /* Argon2 Team - Begin Code */
-int blake2b_long(void *pout, size_t outlen, const void *in, size_t inlen) {
-    uint8_t *out = (uint8_t *)pout;
+int argon2d_blake2b_long(void *pout, size_t outlen, const void *in, size_t inlen) {
+    uint8_t *out = static_cast<uint8_t *>(pout);
     blake2b_state blake_state;
     uint8_t outlen_bytes[sizeof(uint32_t)] = {0};
     int ret = -1;
@@ -343,7 +343,7 @@ int blake2b_long(void *pout, size_t outlen, const void *in, size_t inlen) {
     }
 
     /* Ensure little-endian byte order! */
-    store32(outlen_bytes, (uint32_t)outlen);
+    store32(outlen_bytes, static_cast<uint32_t>(outlen));
 
 #define TRY(statement)                                                         \
     do {                                                                       \
@@ -354,33 +354,33 @@ int blake2b_long(void *pout, size_t outlen, const void *in, size_t inlen) {
     } while ((void)0, 0)
 
     if (outlen <= BLAKE2B_OUTBYTES) {
-        TRY(blake2b_init(&blake_state, outlen));
-        TRY(blake2b_update(&blake_state, outlen_bytes, sizeof(outlen_bytes)));
-        TRY(blake2b_update(&blake_state, in, inlen));
-        TRY(blake2b_final(&blake_state, out, outlen));
+        TRY(argon2d_blake2b_init(&blake_state, outlen));
+        TRY(argon2d_blake2b_update(&blake_state, outlen_bytes, sizeof(outlen_bytes)));
+        TRY(argon2d_blake2b_update(&blake_state, in, inlen));
+        TRY(argon2d_blake2b_final(&blake_state, out, outlen));
     } else {
         uint32_t toproduce;
         uint8_t out_buffer[BLAKE2B_OUTBYTES];
         uint8_t in_buffer[BLAKE2B_OUTBYTES];
-        TRY(blake2b_init(&blake_state, BLAKE2B_OUTBYTES));
-        TRY(blake2b_update(&blake_state, outlen_bytes, sizeof(outlen_bytes)));
-        TRY(blake2b_update(&blake_state, in, inlen));
-        TRY(blake2b_final(&blake_state, out_buffer, BLAKE2B_OUTBYTES));
+        TRY(argon2d_blake2b_init(&blake_state, BLAKE2B_OUTBYTES));
+        TRY(argon2d_blake2b_update(&blake_state, outlen_bytes, sizeof(outlen_bytes)));
+        TRY(argon2d_blake2b_update(&blake_state, in, inlen));
+        TRY(argon2d_blake2b_final(&blake_state, out_buffer, BLAKE2B_OUTBYTES));
         memcpy(out, out_buffer, BLAKE2B_OUTBYTES / 2);
         out += BLAKE2B_OUTBYTES / 2;
-        toproduce = (uint32_t)outlen - BLAKE2B_OUTBYTES / 2;
+        toproduce = static_cast<uint32_t>(outlen) - BLAKE2B_OUTBYTES / 2;
 
         while (toproduce > BLAKE2B_OUTBYTES) {
             memcpy(in_buffer, out_buffer, BLAKE2B_OUTBYTES);
-            TRY(blake2b(out_buffer, BLAKE2B_OUTBYTES, in_buffer,
-                        BLAKE2B_OUTBYTES, NULL, 0));
+            TRY(argon2d_blake2b(out_buffer, BLAKE2B_OUTBYTES, in_buffer,
+                        BLAKE2B_OUTBYTES, nullptr, 0));
             memcpy(out, out_buffer, BLAKE2B_OUTBYTES / 2);
             out += BLAKE2B_OUTBYTES / 2;
             toproduce -= BLAKE2B_OUTBYTES / 2;
         }
 
         memcpy(in_buffer, out_buffer, BLAKE2B_OUTBYTES);
-        TRY(blake2b(out_buffer, toproduce, in_buffer, BLAKE2B_OUTBYTES, NULL,
+        TRY(argon2d_blake2b(out_buffer, toproduce, in_buffer, BLAKE2B_OUTBYTES, nullptr,
                     0));
         memcpy(out, out_buffer, toproduce);
     }

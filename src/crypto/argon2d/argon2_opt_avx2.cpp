@@ -16,24 +16,36 @@
  */
 
 /*
- * AVX2 fill_segment — compiled separately with ${AVX2_CXXFLAGS} (-mavx2).
- * Analogous to sha256_avx2.cpp: CMakeLists adds this source only when
- * HAVE_AVX2 is set, and compiles it with AVX2_CXXFLAGS via set_property.
- * The compiler defines __AVX2__ when built with -mavx2, so
- * blamka-round-opt.h selects the __m256i path automatically.
+ * AVX2 fill_segment — compiled separately with ${ARGON2_AVX2_CXXFLAGS} (-mavx2).
+ *
+ * Self-contained: all Blake2b round primitives come from blamka-round-avx2.h,
+ * which contains only __m256i code with no #if __AVX512F__ dispatch.
+ * The old blamka-round-opt.h is NOT included here.
+ *
+ * Future <>-migration: "blake2/blamka-round-avx2.h"
+ *                   → <crypto/argon2d/blake2/blamka-round-avx2.h>
  */
 
-#include <stdint.h>
-#include <string.h>
-#include <stdlib.h>
+#ifdef ENABLE_ARGON2_AVX2
 
-#include "argon2.h"
-#include "core.h"
-#include "blake2/blake2.h"
-#include "blake2/blamka-round-opt.h"   /* __AVX2__ active → __m256i path */
+#include <cstdint>
+#include <cstring>
+#include <cstdlib>
 
+#include <crypto/argon2d/argon2.h>
+#include <crypto/argon2d/argon2_core.h>
+#include <crypto/argon2d/blake2/blake2.h>
+#include <crypto/argon2d/blake2/blamka-round-avx2.h>   /* __m256i, BLAKE2_ROUND_1/2_AVX2 */
+
+/* -------------------------------------------------------------------------
+ * fill_block — AVX2 / __m256i version.
+ *
+ * state[] holds ARGON2_HWORDS_IN_BLOCK (32) __m256i elements, covering the
+ * full 1024-byte Argon2 block (each __m256i = 4 × 64-bit words).
+ * ------------------------------------------------------------------------- */
 static void fill_block(__m256i *state, const block *ref_block,
-                       block *next_block, int with_xor) {
+                       block *next_block, int with_xor)
+{
     __m256i block_XY[ARGON2_HWORDS_IN_BLOCK];
     unsigned int i;
 
@@ -51,14 +63,18 @@ static void fill_block(__m256i *state, const block *ref_block,
         }
     }
 
+    /* Column pass — 4 iterations */
     for (i = 0; i < 4; ++i) {
-        BLAKE2_ROUND_1(state[8 * i + 0], state[8 * i + 4], state[8 * i + 1], state[8 * i + 5],
-                       state[8 * i + 2], state[8 * i + 6], state[8 * i + 3], state[8 * i + 7]);
+        BLAKE2_ROUND_1_AVX2(
+            state[8 * i + 0], state[8 * i + 4], state[8 * i + 1], state[8 * i + 5],
+            state[8 * i + 2], state[8 * i + 6], state[8 * i + 3], state[8 * i + 7]);
     }
 
+    /* Row pass — 4 iterations */
     for (i = 0; i < 4; ++i) {
-        BLAKE2_ROUND_2(state[ 0 + i], state[ 4 + i], state[ 8 + i], state[12 + i],
-                       state[16 + i], state[20 + i], state[24 + i], state[28 + i]);
+        BLAKE2_ROUND_2_AVX2(
+            state[ 0 + i], state[ 4 + i], state[ 8 + i], state[12 + i],
+            state[16 + i], state[20 + i], state[24 + i], state[28 + i]);
     }
 
     for (i = 0; i < ARGON2_HWORDS_IN_BLOCK; i++) {
@@ -67,7 +83,8 @@ static void fill_block(__m256i *state, const block *ref_block,
     }
 }
 
-static void next_addresses(block *address_block, block *input_block) {
+static void next_addresses(block *address_block, block *input_block)
+{
     __m256i zero_block[ARGON2_HWORDS_IN_BLOCK];
     __m256i zero2_block[ARGON2_HWORDS_IN_BLOCK];
     memset(zero_block,  0, sizeof(zero_block));
@@ -77,9 +94,13 @@ static void next_addresses(block *address_block, block *input_block) {
     fill_block(zero2_block, address_block, address_block, 0);
 }
 
+/* -------------------------------------------------------------------------
+ * fill_segment_avx2 — exported; registered by Argon2AutoDetectImpl (opt.cpp).
+ * ------------------------------------------------------------------------- */
 void fill_segment_avx2(const argon2_instance_t *instance,
-                       argon2_position_t position) {
-    block *ref_block = NULL, *curr_block = NULL;
+                       argon2_position_t position)
+{
+    block *ref_block = nullptr, *curr_block = nullptr;
     block address_block, input_block;
     uint64_t pseudo_rand, ref_index, ref_lane;
     uint32_t prev_offset, curr_offset;
@@ -87,7 +108,7 @@ void fill_segment_avx2(const argon2_instance_t *instance,
     __m256i state[ARGON2_HWORDS_IN_BLOCK];
     int data_independent_addressing;
 
-    if (instance == NULL) {
+    if (instance == nullptr) {
         return;
     }
 
@@ -128,6 +149,7 @@ void fill_segment_avx2(const argon2_instance_t *instance,
 
     for (i = starting_index; i < instance->segment_length;
          ++i, ++curr_offset, ++prev_offset) {
+
         if (curr_offset % instance->lane_length == 1) {
             prev_offset = curr_offset - 1;
         }
@@ -160,3 +182,5 @@ void fill_segment_avx2(const argon2_instance_t *instance,
         }
     }
 }
+
+#endif /* ENABLE_ARGON2_AVX2 */

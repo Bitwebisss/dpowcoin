@@ -2494,6 +2494,8 @@ bool PeerManagerImpl::CheckHeadersPoW(const std::vector<CBlockHeader>& headers, 
         Misbehaving(peer, 100, "header with invalid proof of work");
         return false;
     }
+
+    // Are these headers connected to each other?
     if (!CheckHeadersAreContinuous(headers)) {
         Misbehaving(peer, 20, "non-continuous headers sequence");
         return false;

@@ -15,8 +15,8 @@
  * software. If not, they may be obtained at the above URLs.
  */
 
-#ifndef ARGON2_THREAD_H
-#define ARGON2_THREAD_H
+#ifndef BITCOIN_CRYPTO_ARGON2D_ARGON2_THREAD_H
+#define BITCOIN_CRYPTO_ARGON2D_ARGON2_THREAD_H
 
 #if !defined(ARGON2_NO_THREADS)
 
@@ -63,5 +63,5 @@ int argon2_thread_join(argon2_thread_handle_t handle);
 */
 void argon2_thread_exit(void);
 
-#endif /* ARGON2_NO_THREADS */
+#endif // BITCOIN_CRYPTO_ARGON2D_ARGON2_THREAD_H
 #endif

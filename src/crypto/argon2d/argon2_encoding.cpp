@@ -15,12 +15,19 @@
  * software. If not, they may be obtained at the above URLs.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
-#include "encoding.h"
-#include "core.h"
+#include <cstdlib>
+#include <cstring>
+#include <climits>
+#include <crypto/argon2d/argon2_encoding.h>
+#include <crypto/argon2d/argon2_core.h>
+
+#if defined(_MSC_VER)
+#  define ARGON2_FALLTHROUGH __fallthrough
+#elif defined(__clang__) || defined(__GNUC__)
+#  define ARGON2_FALLTHROUGH __attribute__((fallthrough))
+#else
+#  define ARGON2_FALLTHROUGH ((void)0)
+#endif
 
 /*
  * Example code for a decoder and encoder of "hash strings", with Argon2
@@ -119,7 +126,7 @@ static size_t to_base64(char *dst, size_t dst_len, const void *src,
     switch (src_len % 3) {
     case 2:
         olen++;
-    /* fall through */
+    ARGON2_FALLTHROUGH;
     case 1:
         olen += 2;
         break;
@@ -129,17 +136,17 @@ static size_t to_base64(char *dst, size_t dst_len, const void *src,
     }
     acc = 0;
     acc_len = 0;
-    buf = (const unsigned char *)src;
+    buf = static_cast<const unsigned char *>(src);
     while (src_len-- > 0) {
         acc = (acc << 8) + (*buf++);
         acc_len += 8;
         while (acc_len >= 6) {
             acc_len -= 6;
-            *dst++ = (char)b64_byte_to_char((acc >> acc_len) & 0x3F);
+            *dst++ = static_cast<char>(b64_byte_to_char((acc >> acc_len) & 0x3F));
         }
     }
     if (acc_len > 0) {
-        *dst++ = (char)b64_byte_to_char((acc << (6 - acc_len)) & 0x3F);
+        *dst++ = static_cast<char>(b64_byte_to_char((acc << (6 - acc_len)) & 0x3F));
     }
     *dst++ = 0;
     return olen;
@@ -154,7 +161,7 @@ static size_t to_base64(char *dst, size_t dst_len, const void *src,
  * Decoding stops when a non-Base64 character is encountered, or when
  * the output buffer capacity is exceeded. If an error occurred (output
  * buffer is too small, invalid last characters leading to unprocessed
- * buffered bits), then NULL is returned; otherwise, the returned value
+ * buffered bits), then nullptr is returned; otherwise, the returned value
  * points to the first non-Base64 character in the source stream, which
  * may be the terminating zero.
  */
@@ -163,7 +170,7 @@ static const char *from_base64(void *dst, size_t *dst_len, const char *src) {
     unsigned char *buf;
     unsigned acc, acc_len;
 
-    buf = (unsigned char *)dst;
+    buf = static_cast<unsigned char *>(dst);
     len = 0;
     acc = 0;
     acc_len = 0;
@@ -180,7 +187,7 @@ static const char *from_base64(void *dst, size_t *dst_len, const char *src) {
         if (acc_len >= 8) {
             acc_len -= 8;
             if ((len++) >= *dst_len) {
-                return NULL;
+                return nullptr;
             }
             *buf++ = (acc >> acc_len) & 0xFF;
         }
@@ -193,7 +200,7 @@ static const char *from_base64(void *dst, size_t *dst_len, const char *src) {
      * bits must also all be zero.
      */
     if (acc_len > 4 || (acc & (((unsigned)1 << acc_len) - 1)) != 0) {
-        return NULL;
+        return nullptr;
     }
     *dst_len = len;
     return src;
@@ -204,7 +211,7 @@ static const char *from_base64(void *dst, size_t *dst_len, const char *src) {
  * Returned value is a pointer to the next non-decimal character in the
  * string. If there is no digit at all, or the value encoding is not
  * minimal (extra leading zeros), or the value does not fit in an
- * 'unsigned long', then NULL is returned.
+ * 'unsigned long', then nullptr is returned.
  */
 static const char *decode_decimal(const char *str, unsigned long *v) {
     const char *orig;
@@ -220,19 +227,58 @@ static const char *decode_decimal(const char *str, unsigned long *v) {
         }
         c -= '0';
         if (acc > (ULONG_MAX / 10)) {
-            return NULL;
+            return nullptr;
         }
         acc *= 10;
         if ((unsigned long)c > (ULONG_MAX - acc)) {
-            return NULL;
+            return nullptr;
         }
         acc += (unsigned long)c;
     }
     if (str == orig || (*orig == '0' && str != (orig + 1))) {
-        return NULL;
+        return nullptr;
     }
     *v = acc;
     return str;
+}
+
+/*
+ * Locale-independent conversion of an unsigned long to a decimal C string.
+ * Writes the NUL-terminated result into buf[buf_size].
+ * buf_size must be at least 21 to hold the largest possible unsigned long
+ * value (20 digits) plus the NUL terminator.
+ * Returns  0 on success.
+ * Returns -1 if buf_size is too small to hold the result (encoding fails).
+ * Avoids sprintf/snprintf entirely to satisfy the locale-dependence linter.
+ */
+static int uint_to_str(char *buf, size_t buf_size, unsigned long x)
+{
+    /* Intermediate buffer: unsigned long is at most 20 decimal digits. */
+    char tmp[20];
+    size_t i = 0;
+    size_t j;
+
+    if (x == 0) {
+        if (buf_size < 2) {
+            return -1;
+        }
+        buf[0] = '0';
+        buf[1] = '\0';
+        return 0;
+    }
+    while (x > 0) {
+        tmp[i++] = static_cast<char>('0' + static_cast<int>(x % 10));
+        x /= 10;
+    }
+    /* Need i digits + NUL terminator. */
+    if (buf_size < i + 1) {
+        return -1;
+    }
+    for (j = 0; j < i; j++) {
+        buf[j] = tmp[i - 1 - j];
+    }
+    buf[i] = '\0';
+    return 0;
 }
 
 /* ==================================================================== */
@@ -282,7 +328,7 @@ int decode_string(argon2_context *ctx, const char *str, argon2_type type) {
     do {                                                                       \
         unsigned long dec_x;                                                   \
         str = decode_decimal(str, &dec_x);                                     \
-        if (str == NULL) {                                                     \
+        if (str == nullptr) {                                                     \
             return ARGON2_DECODING_FAIL;                                       \
         }                                                                      \
         (x) = dec_x;                                                           \
@@ -294,7 +340,7 @@ int decode_string(argon2_context *ctx, const char *str, argon2_type type) {
     do {                                                                       \
         unsigned long dec_x;                                                   \
         str = decode_decimal(str, &dec_x);                                     \
-        if (str == NULL || dec_x > UINT32_MAX) {                               \
+        if (str == nullptr || dec_x > UINT32_MAX) {                               \
             return ARGON2_DECODING_FAIL;                                       \
         }                                                                      \
         (x) = (uint32_t)dec_x;                                                 \
@@ -306,7 +352,7 @@ int decode_string(argon2_context *ctx, const char *str, argon2_type type) {
     do {                                                                       \
         size_t bin_len = (max_len);                                            \
         str = from_base64(buf, &bin_len, str);                                 \
-        if (str == NULL || bin_len > UINT32_MAX) {                             \
+        if (str == nullptr || bin_len > UINT32_MAX) {                             \
             return ARGON2_DECODING_FAIL;                                       \
         }                                                                      \
         (len) = (uint32_t)bin_len;                                             \
@@ -344,12 +390,12 @@ int decode_string(argon2_context *ctx, const char *str, argon2_type type) {
     BIN(ctx->out, maxoutlen, ctx->outlen);
 
     /* The rest of the fields get the default values */
-    ctx->secret = NULL;
+    ctx->secret = nullptr;
     ctx->secretlen = 0;
-    ctx->ad = NULL;
+    ctx->ad = nullptr;
     ctx->adlen = 0;
-    ctx->allocate_cbk = NULL;
-    ctx->free_cbk = NULL;
+    ctx->allocate_cbk = nullptr;
+    ctx->free_cbk = nullptr;
     ctx->flags = ARGON2_DEFAULT_FLAGS;
 
     /* On return, must have valid context */
@@ -385,8 +431,11 @@ int encode_string(char *dst, size_t dst_len, argon2_context *ctx,
 
 #define SX(x)                                                                  \
     do {                                                                       \
-        char tmp[30];                                                          \
-        sprintf(tmp, "%lu", (unsigned long)(x));                               \
+        /* 21 bytes: up to 20 decimal digits for unsigned long + NUL. */       \
+        char tmp[21];                                                          \
+        if (uint_to_str(tmp, sizeof(tmp), (unsigned long)(x)) != 0) {         \
+            return ARGON2_ENCODING_FAIL;                                       \
+        }                                                                      \
         SS(tmp);                                                               \
     } while ((void)0, 0)
 
@@ -443,7 +492,7 @@ size_t b64len(uint32_t len) {
     switch (len % 3) {
     case 2:
         olen++;
-    /* fall through */
+    ARGON2_FALLTHROUGH;
     case 1:
         olen += 2;
         break;
@@ -460,4 +509,3 @@ size_t numlen(uint32_t num) {
     }
     return len;
 }
-

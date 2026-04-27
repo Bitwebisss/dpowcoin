@@ -14,64 +14,97 @@
  * You should have received a copy of both of these licenses along with this
  * software. If not, they may be obtained at the above URLs.
  */
-
 /*
- * AVX-512F fill_segment — compiled separately with ${AVX512F_CXXFLAGS} (-mavx512f).
- * Analogous to sha256_x86_shani.cpp: CMakeLists adds this source only when
- * HAVE_AVX512F is set, and compiles it with AVX512F_CXXFLAGS via set_property.
- * The compiler defines __AVX512F__ when built with -mavx512f, so
- * blamka-round-opt.h selects the __m512i path automatically.
+ * SSSE3 fill_segment — compiled separately with ${ARGON2_SSSE3_CXXFLAGS}
+ * (-mssse3).
+ *
+ * Structurally identical to argon2_opt_sse2.cpp; the speedup comes from
+ * blamka-round-ssse3.h which defines all rotation and diagonalize helpers
+ * unconditionally using SSSE3 instructions:
+ *
+ *   rotr24: _mm_shuffle_epi8(x, r24)     vs. shift+or in SSE2
+ *   rotr16: _mm_shuffle_epi8(x, r16)     vs. shift+or in SSE2
+ *   rotr32: _mm_shuffle_epi32(...)        (same cost both paths)
+ *   diag:   _mm_alignr_epi8(...)          vs. unpack pair in SSE2
+ *
+ * WHY NOT blamka-round-sse2.h:
+ * That header has #if defined(__SSSE3__) which silently activates on any
+ * build host with SSSE3 (all CPUs since ~2008), making the SSE2 translation
+ * unit identical to SSSE3 when -march is broad. Using the self-contained
+ * blamka-round-ssse3.h guarantees clean tier separation regardless of host.
+ *
+ * Target machines: Sandy Bridge, Ivy Bridge (SSSE3, no AVX2).
+ * On Haswell+ the AVX2 path wins; this path is never selected there.
+ *
+ * Bit in use_implementation: 0x02 (see argon2_opt.cpp).
  */
 
-#include <stdint.h>
-#include <string.h>
-#include <stdlib.h>
+#ifdef ENABLE_ARGON2_SSSE3
 
-#include "argon2.h"
-#include "core.h"
-#include "blake2/blake2.h"
-#include "blake2/blamka-round-opt.h"   /* __AVX512F__ active → __m512i path */
+#include <compat/cpuid.h>
 
-static void fill_block(__m512i *state, const block *ref_block,
-                       block *next_block, int with_xor) {
-    __m512i block_XY[ARGON2_512BIT_WORDS_IN_BLOCK];
+#if defined(HAVE_GETCPUID)
+
+#include <cstdint>
+#include <cstring>
+#include <cstdlib>
+
+#include <crypto/argon2d/argon2.h>
+#include <crypto/argon2d/argon2_core.h>
+#include <crypto/argon2d/blake2/blake2.h>
+#include <crypto/argon2d/blake2/blamka-round-ssse3.h>  /* self-contained SSSE3 */
+
+/* -------------------------------------------------------------------------
+ * fill_block — SSSE3 / __m128i version.
+ *
+ * state[] holds ARGON2_OWORDS_IN_BLOCK (64) __m128i elements covering the
+ * full 1024-byte block (each __m128i = 2 × 64-bit words).
+ * BLAKE2_ROUND_SSSE3 operates on 8 __m128i values at a time.
+ * ------------------------------------------------------------------------- */
+static void fill_block(__m128i *state, const block *ref_block,
+                       block *next_block, int with_xor)
+{
+    __m128i block_XY[ARGON2_OWORDS_IN_BLOCK];
     unsigned int i;
 
     if (with_xor) {
-        for (i = 0; i < ARGON2_512BIT_WORDS_IN_BLOCK; i++) {
-            state[i] = _mm512_xor_si512(
-                state[i], _mm512_loadu_si512((const __m512i *)ref_block->v + i));
-            block_XY[i] = _mm512_xor_si512(
-                state[i], _mm512_loadu_si512((const __m512i *)next_block->v + i));
+        for (i = 0; i < ARGON2_OWORDS_IN_BLOCK; i++) {
+            state[i] = _mm_xor_si128(
+                state[i], _mm_loadu_si128((const __m128i *)ref_block->v + i));
+            block_XY[i] = _mm_xor_si128(
+                state[i], _mm_loadu_si128((const __m128i *)next_block->v + i));
         }
     } else {
-        for (i = 0; i < ARGON2_512BIT_WORDS_IN_BLOCK; i++) {
-            block_XY[i] = state[i] = _mm512_xor_si512(
-                state[i], _mm512_loadu_si512((const __m512i *)ref_block->v + i));
+        for (i = 0; i < ARGON2_OWORDS_IN_BLOCK; i++) {
+            block_XY[i] = state[i] = _mm_xor_si128(
+                state[i], _mm_loadu_si128((const __m128i *)ref_block->v + i));
         }
     }
 
-    for (i = 0; i < 2; ++i) {
-        BLAKE2_ROUND_1(
+    /* Column pass — 8 iterations × 8 elements */
+    for (i = 0; i < 8; ++i) {
+        BLAKE2_ROUND_SSSE3(
             state[8 * i + 0], state[8 * i + 1], state[8 * i + 2], state[8 * i + 3],
             state[8 * i + 4], state[8 * i + 5], state[8 * i + 6], state[8 * i + 7]);
     }
 
-    for (i = 0; i < 2; ++i) {
-        BLAKE2_ROUND_2(
-            state[2 * 0 + i], state[2 * 1 + i], state[2 * 2 + i], state[2 * 3 + i],
-            state[2 * 4 + i], state[2 * 5 + i], state[2 * 6 + i], state[2 * 7 + i]);
+    /* Row pass — 8 iterations × 8 elements (strided) */
+    for (i = 0; i < 8; ++i) {
+        BLAKE2_ROUND_SSSE3(
+            state[8 * 0 + i], state[8 * 1 + i], state[8 * 2 + i], state[8 * 3 + i],
+            state[8 * 4 + i], state[8 * 5 + i], state[8 * 6 + i], state[8 * 7 + i]);
     }
 
-    for (i = 0; i < ARGON2_512BIT_WORDS_IN_BLOCK; i++) {
-        state[i] = _mm512_xor_si512(state[i], block_XY[i]);
-        _mm512_storeu_si512((__m512i *)next_block->v + i, state[i]);
+    for (i = 0; i < ARGON2_OWORDS_IN_BLOCK; i++) {
+        state[i] = _mm_xor_si128(state[i], block_XY[i]);
+        _mm_storeu_si128((__m128i *)next_block->v + i, state[i]);
     }
 }
 
-static void next_addresses(block *address_block, block *input_block) {
-    __m512i zero_block[ARGON2_512BIT_WORDS_IN_BLOCK];
-    __m512i zero2_block[ARGON2_512BIT_WORDS_IN_BLOCK];
+static void next_addresses(block *address_block, block *input_block)
+{
+    __m128i zero_block[ARGON2_OWORDS_IN_BLOCK];
+    __m128i zero2_block[ARGON2_OWORDS_IN_BLOCK];
     memset(zero_block,  0, sizeof(zero_block));
     memset(zero2_block, 0, sizeof(zero2_block));
     input_block->v[6]++;
@@ -79,17 +112,22 @@ static void next_addresses(block *address_block, block *input_block) {
     fill_block(zero2_block, address_block, address_block, 0);
 }
 
-void fill_segment_avx512(const argon2_instance_t *instance,
-                         argon2_position_t position) {
-    block *ref_block = NULL, *curr_block = NULL;
+/* -------------------------------------------------------------------------
+ * fill_segment_ssse3 — exported; registered by Argon2AutoDetectImpl (opt.cpp).
+ * Slot: preferred over SSE2, superseded by AVX2 when available.
+ * ------------------------------------------------------------------------- */
+void fill_segment_ssse3(const argon2_instance_t *instance,
+                        argon2_position_t position)
+{
+    block *ref_block = nullptr, *curr_block = nullptr;
     block address_block, input_block;
     uint64_t pseudo_rand, ref_index, ref_lane;
     uint32_t prev_offset, curr_offset;
     uint32_t starting_index, i;
-    __m512i state[ARGON2_512BIT_WORDS_IN_BLOCK];
+    __m128i state[ARGON2_OWORDS_IN_BLOCK];
     int data_independent_addressing;
 
-    if (instance == NULL) {
+    if (instance == nullptr) {
         return;
     }
 
@@ -130,6 +168,7 @@ void fill_segment_avx512(const argon2_instance_t *instance,
 
     for (i = starting_index; i < instance->segment_length;
          ++i, ++curr_offset, ++prev_offset) {
+
         if (curr_offset % instance->lane_length == 1) {
             prev_offset = curr_offset - 1;
         }
@@ -162,3 +201,6 @@ void fill_segment_avx512(const argon2_instance_t *instance,
         }
     }
 }
+
+#endif /* HAVE_GETCPUID */
+#endif /* ENABLE_ARGON2_SSSE3 */

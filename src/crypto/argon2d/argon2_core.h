@@ -15,15 +15,10 @@
  * software. If not, they may be obtained at the above URLs.
  */
 
-#ifndef ARGON2_CORE_H
-#define ARGON2_CORE_H
+#ifndef BITCOIN_CRYPTO_ARGON2D_ARGON2_CORE_H
+#define BITCOIN_CRYPTO_ARGON2D_ARGON2_CORE_H
 
-#include "argon2.h"
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#define CONST_CAST(x) (x)(uintptr_t)
+#include <crypto/argon2d/argon2_types.h>
 
 /**********************Argon2 internal constants*******************************/
 
@@ -159,7 +154,7 @@ uint32_t index_alpha(const argon2_instance_t *instance,
  * an error code
  * @param context Pointer to current Argon2 context
  * @return ARGON2_OK if everything is all right, otherwise one of error codes
- * (all defined in <argon2.h>
+ * (all defined in <crypto/argon2d/argon2.h>
  */
 int validate_inputs(const argon2_context *context);
 
@@ -204,7 +199,7 @@ int initialize(argon2_instance_t *instance, argon2_context *context);
  * @param instance Pointer to current instance of Argon2
  * @pre instance->state must point to necessary amount of memory
  * @pre context->out must point to outlen bytes of memory
- * @pre if context->free_cbk is not NULL, it should point to a function that
+ * @pre if context->free_cbk is not nullptr, it should point to a function that
  * deallocates memory
  */
 void finalize(const argon2_context *context, argon2_instance_t *instance);
@@ -228,8 +223,4 @@ void fill_segment(const argon2_instance_t *instance,
  */
 int fill_memory_blocks(argon2_instance_t *instance);
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif
+#endif // BITCOIN_CRYPTO_ARGON2D_ARGON2_CORE_H
