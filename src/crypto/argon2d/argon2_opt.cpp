@@ -173,6 +173,7 @@ const char *Argon2AutoDetectImpl(uint8_t use_implementation)
 #endif
         {
             /* STANDARD=0 or no matching tier compiled — stay on reference */
+			(void)have_xsave;
             (void)have_avx; (void)have_avx2; (void)have_avx512f;
             (void)have_ssse3; (void)have_sse2; (void)enabled_avx;
         }
