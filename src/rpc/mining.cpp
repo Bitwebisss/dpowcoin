@@ -64,7 +64,7 @@ static UniValue GetNetworkHashPS(int lookup, int height, const CChain& active_ch
 
     /*
     if (lookup <= 0)
-        lookup = Params().GetConsensus().lwmaAveragingWindow;
+        lookup = pb->nHeight % Params().GetConsensus().DifficultyAdjustmentInterval() + 1;
     */
 
     /* Dpowcoin Params */
