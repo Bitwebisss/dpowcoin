@@ -40,7 +40,7 @@ from .util import (
     p2p_port,
 )
 
-BITCOIND_PROC_WAIT_TIMEOUT = 120
+BITCOIND_PROC_WAIT_TIMEOUT = 6000
 
 
 class FailedToStartError(Exception):
