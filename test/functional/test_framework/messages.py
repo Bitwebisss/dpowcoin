@@ -835,6 +835,7 @@ class CBlock(CBlockHeader):
         return True
 
     def solve(self):
+        self.rehash()
         target = uint256_from_compact(self.nBits)
         while True:
             self.calc_sha256()
@@ -851,6 +852,7 @@ class CBlock(CBlockHeader):
             self.sha256 = None
             self.yespower = None
             self.argon2id = None
+            self.rehash()
 
     # Calculate the block weight using witness and non-witness
     # serialization size (does NOT use sigops).
