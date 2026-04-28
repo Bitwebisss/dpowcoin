@@ -32,6 +32,7 @@ using node::CBlockTemplate;
 
 namespace miner_tests {
 struct MinerTestingSetup : public TestingSetup {
+    MinerTestingSetup() : TestingSetup(ChainType::REGTEST) {}
     void TestPackageSelection(const CScript& scriptPubKey, const std::vector<CTransactionRef>& txFirst) EXCLUSIVE_LOCKS_REQUIRED(::cs_main);
     void TestBasicMining(const CScript& scriptPubKey, const std::vector<CTransactionRef>& txFirst, int baseheight) EXCLUSIVE_LOCKS_REQUIRED(::cs_main);
     void TestPrioritisedMining(const CScript& scriptPubKey, const std::vector<CTransactionRef>& txFirst) EXCLUSIVE_LOCKS_REQUIRED(::cs_main);
@@ -653,8 +654,8 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
             pblock->hashMerkleRoot = BlockMerkleRoot(*pblock);
 
             // Normal usage — hardcoded nonces from BLOCKINFO:
-            // pblock->nNonce = bi.nonce;
-
+            pblock->nNonce = bi.nonce;
+            /*
             pblock->nNonce = 0;
             // code for regenerate BLOCKINFO
             while (!CheckProofOfWork(pblock->GetYespowerPoWHash(), pblock->nBits, Assert(m_node.chainman)->GetParams().GetConsensus()) ||
@@ -667,7 +668,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
             FILE* f = fopen("/tmp/blockinfo.txt", "a");
             fprintf(f, "{%u, %u},\n", bi.extranonce, pblock->nNonce);
             fclose(f);
-
+            */
         }
 
         std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(*pblock);
