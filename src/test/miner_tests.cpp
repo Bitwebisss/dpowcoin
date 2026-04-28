@@ -423,6 +423,19 @@ void MinerTestingSetup::TestBasicMining(const CScript& scriptPubKey, const std::
     // height map
     std::vector<int> prevheights;
 
+    // Guard: BIP68/CSV must be active from block 1. If CSVHeight is not 1,
+    // createNewBlock will NOT throw bad-txns-nonfinal in the check below and
+    // Boost will only print "exception expected but not raised" with no context.
+    // This message tells the developer exactly what chainparam is misconfigured.
+    const auto& consensus{m_node.chainman->GetParams().GetConsensus()};
+    BOOST_REQUIRE_MESSAGE(consensus.CSVHeight <= 1,
+        strprintf("CSVHeight must be 1 for this test (got %d). "
+                  "BIP68/CSV must be active from block 1 so that "
+                  "createNewBlock rejects a non-BIP68-final transaction with "
+                  "bad-txns-nonfinal at current tip height %d.",
+                  consensus.CSVHeight,
+                  m_node.chainman->ActiveChain().Tip()->nHeight));
+
     // relative height locked
     tx.nVersion = 2;
     tx.vin.resize(1);
@@ -504,15 +517,17 @@ void MinerTestingSetup::TestBasicMining(const CScript& scriptPubKey, const std::
     tx.vin[0].nSequence = CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG | 1;
     BOOST_CHECK(!TestSequenceLocks(CTransaction{tx}, tx_mempool)); // Sequence locks fail
 
-    auto pblocktemplate = AssemblerForTest(tx_mempool).CreateNewBlock(scriptPubKey);
-    BOOST_CHECK(pblocktemplate);
+    // BIP68 enforcement check (locked state): BlockAssembler includes the two
+    // relative-locked txs via stale LockPoints (lp.height=0 <= tip passes
+    // TestLockPointValidity). TestBlockValidity then detects they are BIP68-non-final
+    // at the current height and rejects the block. The two absolute-locked txs are
+    // already excluded by IsFinalTx before reaching BIP68 checks.
+    // Regression signal: if this exception stops being thrown, BIP68 is broken.
+    BOOST_CHECK_EXCEPTION(AssemblerForTest(tx_mempool).CreateNewBlock(scriptPubKey), std::runtime_error, HasReason("bad-txns-nonfinal"));
 
-    // None of the of the absolute height/time locked tx should have made
-    // it into the template because we still check IsFinalTx in CreateNewBlock,
-    // but relative locked txs will if inconsistently added to mempool.
-    // For now these will still generate a valid template until BIP68 soft fork
-    BOOST_CHECK_EQUAL(pblocktemplate->block.vtx.size(), 3U);
-    // However if we advance height by 1 and time by SEQUENCE_LOCK_TIME, all of them should be mined
+    // Advance height by 1 and MTP by SEQUENCE_LOCK_TIME so all four locked txs
+    // become final. The relative-locked txs are already in the mempool from the
+    // addUnchecked calls above and do not need to be re-added.
     for (int i = 0; i < CBlockIndex::nMedianTimeSpan; ++i) {
         CBlockIndex* ancestor{Assert(m_node.chainman->ActiveChain().Tip()->GetAncestor(m_node.chainman->ActiveChain().Tip()->nHeight - i))};
         ancestor->nTime += SEQUENCE_LOCK_TIME; // Trick the MedianTimePast
@@ -520,7 +535,9 @@ void MinerTestingSetup::TestBasicMining(const CScript& scriptPubKey, const std::
     m_node.chainman->ActiveChain().Tip()->nHeight++;
     SetMockTime(m_node.chainman->ActiveChain().Tip()->GetMedianTimePast() + 1);
 
-    BOOST_CHECK(pblocktemplate = AssemblerForTest(tx_mempool).CreateNewBlock(scriptPubKey));
+    // Unlocked state: all four txs are now final and must appear in the template.
+    auto pblocktemplate = AssemblerForTest(tx_mempool).CreateNewBlock(scriptPubKey);
+    BOOST_REQUIRE(pblocktemplate);
     BOOST_CHECK_EQUAL(pblocktemplate->block.vtx.size(), 5U);
 }
 
