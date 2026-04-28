@@ -361,7 +361,7 @@ void MinerTestingSetup::TestBasicMining(const CScript& scriptPubKey, const std::
         // subsidy changing
         int nHeight = m_node.chainman->ActiveChain().Height();
         // Create an actual 209999-long block chain (without valid blocks).
-        while (m_node.chainman->ActiveChain().Tip()->nHeight < 209999) {
+        while (m_node.chainman->ActiveChain().Tip()->nHeight < 409999) {
             CBlockIndex* prev = m_node.chainman->ActiveChain().Tip();
             CBlockIndex* next = new CBlockIndex();
             next->phashBlock = new uint256(InsecureRand256());
@@ -373,7 +373,7 @@ void MinerTestingSetup::TestBasicMining(const CScript& scriptPubKey, const std::
         }
         BOOST_CHECK(AssemblerForTest(tx_mempool).CreateNewBlock(scriptPubKey));
         // Extend to a 210000-long block chain.
-        while (m_node.chainman->ActiveChain().Tip()->nHeight < 210000) {
+        while (m_node.chainman->ActiveChain().Tip()->nHeight < 420000) {
             CBlockIndex* prev = m_node.chainman->ActiveChain().Tip();
             CBlockIndex* next = new CBlockIndex();
             next->phashBlock = new uint256(InsecureRand256());
@@ -635,14 +635,14 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
             pblock->hashMerkleRoot = BlockMerkleRoot(*pblock);
             pblock->nNonce = bi.nonce;
             // code for regenerate BLOCKINFO
-            /*
+
             while (!CheckProofOfWork(block.GetArgon2idPoWHash(), block.nBits, Assert(m_node.chainman)->GetParams().GetConsensus())) {
                ++block.nNonce;
             }
             FILE* f = fopen("/tmp/blockinfo.txt", "a");
             fprintf(f, "{%u, %u},\n", bi.extranonce, block.nNonce);
             fclose(f);
-            */
+
         }
         std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(*pblock);
         BOOST_CHECK(Assert(m_node.chainman)->ProcessNewBlock(shared_pblock, true, true, nullptr));
