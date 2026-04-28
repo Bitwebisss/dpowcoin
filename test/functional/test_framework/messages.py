@@ -34,13 +34,17 @@ import argon2
 from test_framework.siphash import siphash256
 from test_framework.util import assert_equal
 
-def GetArgon2idHash(input, salts, cost):
-    hash = argon2.low_level.hash_secret_raw(
-        time_cost=2, memory_cost=cost, parallelism=2,
-        hash_len=32, secret=input, salt=salts,
+def GetArgon2idHash(input_bytes, salt_bytes, memory_cost):
+    return argon2.low_level.hash_secret_raw(
+        secret=input_bytes,
+        salt=salt_bytes,
+        time_cost=2,
+        memory_cost=memory_cost,
+        parallelism=2,
+        hash_len=32,
         type=argon2.low_level.Type.ID,
     )
-    return hash
+
 MAX_LOCATOR_SZ = 101
 MAX_BLOCK_WEIGHT = 4000000
 MAX_BLOOM_FILTER_SIZE = 36000
@@ -701,7 +705,6 @@ class CBlockHeader:
             self.hash = header.hash
             self.argon2id = header.argon2id
             self.yespower = header.yespower
-            self.calc_sha256()
 
     def set_null(self):
         self.nVersion = 4
@@ -739,30 +742,18 @@ class CBlockHeader:
 
     def calc_sha256(self):
         if self.sha256 is None:
-            r = b""
-            r += struct.pack("<i", self.nVersion)
-            r += ser_uint256(self.hashPrevBlock)
-            r += ser_uint256(self.hashMerkleRoot)
-            r += struct.pack("<I", self.nTime)
-            r += struct.pack("<I", self.nBits)
-            r += struct.pack("<I", self.nNonce)
+            r = self.serialize()
             self.sha256 = uint256_from_str(hash256(r))
             self.hash = hash256(r)[::-1].hex()
-            # Print SHA-256 hash
-            #print("SHA-256 hash:", self.hash)
-            
-            # get argon2id pow hash
-            hash1 = GetArgon2idHash(r, hashlib.sha512(hashlib.sha512(r).digest()).digest(), 4096)
-            hash2 = GetArgon2idHash(r, hash1, 32768)
-            hash3 = hash2
-            self.argon2id = uint256_from_str(hash3)
-            # Print Argon2id hash
-            #print("Argon2id hash:", hash3.hex())
-            
-            yhash = dpowcoin_yespower.getPoWHash(r)
-            self.yespower = uint256_from_str(yhash)
-            # Print YesPower hash
-            #print("YesPower hash:", yhash.hex())
+            self.yespower = uint256_from_str(dpowcoin_yespower.getPoWHash(r))
+
+    def calc_argon2id(self):
+        if self.argon2id is None:
+            r = self.serialize()
+            salt1 = hashlib.sha512(hashlib.sha512(r).digest()).digest()
+            h1 = GetArgon2idHash(r, salt1, 4096)
+            h2 = GetArgon2idHash(r, h1, 32768)
+            self.argon2id = uint256_from_str(h2)
 
     def rehash(self):
         self.sha256 = None
@@ -831,7 +822,10 @@ class CBlock(CBlockHeader):
     def is_valid(self):
         self.calc_sha256()
         target = uint256_from_compact(self.nBits)
-        while self.argon2id > target and self.yespower > target:
+        if self.yespower > target:
+            return False
+        self.calc_argon2id()
+        if self.argon2id > target:
             return False
         for tx in self.vtx:
             if not tx.is_valid():
@@ -841,11 +835,22 @@ class CBlock(CBlockHeader):
         return True
 
     def solve(self):
-        self.rehash()
         target = uint256_from_compact(self.nBits)
-        while self.argon2id > target and self.yespower > target:
+        while True:
+            self.calc_sha256()
+            if self.yespower > target:
+                self.nNonce += 1
+                self.sha256 = None
+                self.yespower = None
+                self.argon2id = None
+                continue
+            self.calc_argon2id()
+            if self.argon2id <= target:
+                break
             self.nNonce += 1
-            self.rehash()
+            self.sha256 = None
+            self.yespower = None
+            self.argon2id = None
 
     # Calculate the block weight using witness and non-witness
     # serialization size (does NOT use sigops).
