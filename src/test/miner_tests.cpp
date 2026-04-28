@@ -19,6 +19,7 @@
 #include <util/time.h>
 #include <validation.h>
 #include <versionbits.h>
+#include <pow.h>
 
 #include <test/util/setup_common.h>
 
