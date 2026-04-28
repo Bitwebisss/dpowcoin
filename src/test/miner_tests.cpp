@@ -643,7 +643,8 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
             while (!CheckProofOfWork(pblock->GetYespowerPoWHash(), pblock->nBits, Assert(m_node.chainman)->GetParams().GetConsensus()) ||
                    !CheckProofOfWork(pblock->GetArgon2idPoWHash(), pblock->nBits, Assert(m_node.chainman)->GetParams().GetConsensus())) {
                 ++pblock->nNonce;
-                BOOST_REQUIRE(pblock->nNonce != 0);
+                if (pblock->nNonce == 0) {
+                    BOOST_FAIL("nNonce overflow — no valid nonce found for this extranonce");
             }
             FILE* f = fopen("/tmp/blockinfo.txt", "a");
             fprintf(f, "{%u, %u},\n", bi.extranonce, pblock->nNonce);
