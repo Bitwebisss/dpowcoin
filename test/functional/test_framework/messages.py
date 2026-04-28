@@ -806,14 +806,12 @@ class CBlock(CBlockHeader):
     def is_valid(self):
         self.calc_sha256()
         target = uint256_from_compact(self.nBits)
-        r = self.serialize()
-        # Dual PoW: yespower first (cheap), then argon2id
+        r = CBlockHeader.serialize(self)  # только 80 байт заголовка!
         if uint256_from_str(dpowcoin_yespower.getPoWHash(r)) > target:
             return False
         salt = hashlib.sha512(hashlib.sha512(r).digest()).digest()
         h1 = GetArgon2idHash(r, salt, 4096)
-        h2 = GetArgon2idHash(r, h1, 32768)
-        if uint256_from_str(h2) > target:
+        if uint256_from_str(GetArgon2idHash(r, h1, 32768)) > target:
             return False
         for tx in self.vtx:
             if not tx.is_valid():
@@ -826,16 +824,14 @@ class CBlock(CBlockHeader):
         self.rehash()
         target = uint256_from_compact(self.nBits)
         while True:
-            r = self.serialize()
-            # Dual PoW: yespower first (cheap), then argon2id
+            r = CBlockHeader.serialize(self)  # только 80 байт заголовка!
             if uint256_from_str(dpowcoin_yespower.getPoWHash(r)) > target:
                 self.nNonce += 1
                 self.rehash()
                 continue
             salt = hashlib.sha512(hashlib.sha512(r).digest()).digest()
             h1 = GetArgon2idHash(r, salt, 4096)
-            h2 = GetArgon2idHash(r, h1, 32768)
-            if uint256_from_str(h2) > target:
+            if uint256_from_str(GetArgon2idHash(r, h1, 32768)) > target:
                 self.nNonce += 1
                 self.rehash()
                 continue
