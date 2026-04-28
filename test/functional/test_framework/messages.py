@@ -780,6 +780,7 @@ class CBlock(CBlockHeader):
             r += ser_vector(self.vtx, "serialize_without_witness")
         return r
 
+    # Calculate the merkle root given a vector of transaction hashes
     @classmethod
     def get_merkle_root(cls, hashes):
         while len(hashes) > 1:
@@ -798,15 +799,20 @@ class CBlock(CBlockHeader):
         return self.get_merkle_root(hashes)
 
     def calc_witness_merkle_root(self):
+        # For witness root purposes, the hash of the
+        # coinbase, with witness, is defined to be 0...0
         hashes = [ser_uint256(0)]
+
         for tx in self.vtx[1:]:
+            # Calculate the hashes with witness data
             hashes.append(ser_uint256(tx.calc_sha256(True)))
+
         return self.get_merkle_root(hashes)
 
     def is_valid(self):
         self.calc_sha256()
         target = uint256_from_compact(self.nBits)
-        r = CBlockHeader.serialize(self)  # только 80 байт заголовка!
+        r = CBlockHeader.serialize(self)
         if uint256_from_str(dpowcoin_yespower.getPoWHash(r)) > target:
             return False
         salt = hashlib.sha512(hashlib.sha512(r).digest()).digest()
@@ -824,7 +830,7 @@ class CBlock(CBlockHeader):
         self.rehash()
         target = uint256_from_compact(self.nBits)
         while True:
-            r = CBlockHeader.serialize(self)  # только 80 байт заголовка!
+            r = CBlockHeader.serialize(self)
             if uint256_from_str(dpowcoin_yespower.getPoWHash(r)) > target:
                 self.nNonce += 1
                 self.rehash()
@@ -837,6 +843,8 @@ class CBlock(CBlockHeader):
                 continue
             break
 
+    # Calculate the block weight using witness and non-witness
+    # serialization size (does NOT use sigops).
     def get_weight(self):
         with_witness_size = len(self.serialize(with_witness=True))
         without_witness_size = len(self.serialize(with_witness=False))
