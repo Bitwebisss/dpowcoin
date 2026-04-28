@@ -747,18 +747,8 @@ class CBlockHeader:
             self.sha256 = uint256_from_str(hash256(r))
             self.hash = hash256(r)[::-1].hex()
 
-    def calc_argon2id(self):
-        if self.argon2id is None:
-            r = self.serialize()
-            salt1 = hashlib.sha512(hashlib.sha512(r).digest()).digest()
-            h1 = GetArgon2idHash(r, salt1, 4096)
-            h2 = GetArgon2idHash(r, h1, 32768)
-            self.argon2id = uint256_from_str(h2)
-
     def rehash(self):
         self.sha256 = None
-        self.argon2id = None
-        self.yespower = None
         self.calc_sha256()
         return self.sha256
 
