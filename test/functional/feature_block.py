@@ -25,6 +25,7 @@ from test_framework.messages import (
     SEQUENCE_FINAL,
     uint256_from_compact,
     uint256_from_str,
+    calc_pow_hashes,
 )
 from test_framework.p2p import P2PDataStore
 from test_framework.script import (
@@ -636,7 +637,6 @@ class FullBlockTest(BitcoinTestFramework):
         b47 = self.next_block(47)
         target = uint256_from_compact(b47.nBits)
         while True:
-        while b47.argon2id <= target and b47.yespower <= target:
             # Looking for a nonce where at least one algorithm fails
             if yespower > target or argon2id is None or argon2id > target:
                 break
