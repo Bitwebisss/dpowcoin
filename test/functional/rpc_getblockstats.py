@@ -21,10 +21,6 @@ class GetblockstatsTest(BitcoinTestFramework):
     max_stat_pos = 2
 
     def add_options(self, parser):
-        # ƒобавл€ем wallet options Ч без этого descriptors не попадает в self.options,
-        # фреймворк ставит descriptors=None и запускает ноду с -disablewallet,
-        # из-за чего createwallet возвращает "Method not found".
-        # descriptors=False Ч потому что importprivkey работает только с legacy wallet.
         self.add_wallet_options(parser, descriptors=False)
         parser.add_argument('--gen-test-data', dest='gen_test_data',
                             default=False, action='store_true',
@@ -45,7 +41,6 @@ class GetblockstatsTest(BitcoinTestFramework):
     def generate_test_data(self, filename):
         mocktime = 1525107225
         self.nodes[0].setmocktime(mocktime)
-        # ѕередаЄм descriptors= €вно, чтобы тип кошелька совпадал с опцией запуска
         self.nodes[0].createwallet(wallet_name='test', descriptors=self.options.descriptors)
         privkey = self.nodes[0].get_deterministic_priv_key().key
         self.nodes[0].importprivkey(privkey)
