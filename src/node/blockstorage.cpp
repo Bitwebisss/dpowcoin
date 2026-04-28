@@ -1025,11 +1025,13 @@ bool BlockManager::WriteUndoDataForBlock(const CBlockUndo& blockundo, BlockValid
 bool BlockManager::ReadBlockFromDisk(CBlock& block, const FlatFilePos& pos) const
 {
     block.SetNull();
+
     // Open history file to read
     CAutoFile filein{OpenBlockFile(pos, true)};
     if (filein.IsNull()) {
         return error("ReadBlockFromDisk: OpenBlockFile failed for %s", pos.ToString());
     }
+
     // Read block
     try {
         filein >> block;
@@ -1043,10 +1045,12 @@ bool BlockManager::ReadBlockFromDisk(CBlock& block, const FlatFilePos& pos) cons
     if (!CheckProofOfWork(block.GetArgon2idPoWHash(), block.nBits, GetConsensus())) {
         return error("ReadBlockFromDisk: Argon2id proof of work failed at %s", pos.ToString());
     }
+
     // Signet only: check block solution
     if (GetConsensus().signet_blocks && !CheckSignetBlockSolution(block, GetConsensus())) {
         return error("ReadBlockFromDisk: Errors in block solution at %s", pos.ToString());
     }
+
     return true;
 }
 

@@ -40,16 +40,16 @@ def assert_approx(v, vexp, vspan=0.00001):
         raise AssertionError("%s > [%s..%s]" % (str(v), str(vexp - vspan), str(vexp + vspan)))
 
 
-def assert_fee_amount(fee, tx_size, feerate_DPC_kvB):
+def assert_fee_amount(fee, tx_size, feerate_BTC_kvB):
     """Assert the fee is in range."""
     assert isinstance(tx_size, int)
-    target_fee = get_fee(tx_size, feerate_DPC_kvB)
+    target_fee = get_fee(tx_size, feerate_BTC_kvB)
     if fee < target_fee:
-        raise AssertionError("Fee of %s DPC too low! (Should be %s DPC)" % (str(fee), str(target_fee)))
+        raise AssertionError("Fee of %s BTC too low! (Should be %s BTC)" % (str(fee), str(target_fee)))
     # allow the wallet's estimation to be at most 2 bytes off
-    high_fee = get_fee(tx_size + 2, feerate_DPC_kvB)
+    high_fee = get_fee(tx_size + 2, feerate_BTC_kvB)
     if fee > high_fee:
-        raise AssertionError("Fee of %s DPC too high! (Should be %s DPC)" % (str(fee), str(target_fee)))
+        raise AssertionError("Fee of %s BTC too high! (Should be %s BTC)" % (str(fee), str(target_fee)))
 
 
 def assert_equal(thing1, thing2, *args):
@@ -230,11 +230,11 @@ def ceildiv(a, b):
     return -(-a // b)
 
 
-def get_fee(tx_size, feerate_dpc_kvb):
-    """Calculate the fee in DPC given a feerate is DPC/kvB. Reflects CFeeRate::GetFee"""
-    feerate_sat_kvb = int(feerate_dpc_kvb * Decimal(1e8)) # Fee in sat/kvb as an int to avoid float precision errors
+def get_fee(tx_size, feerate_btc_kvb):
+    """Calculate the fee in BTC given a feerate is BTC/kvB. Reflects CFeeRate::GetFee"""
+    feerate_sat_kvb = int(feerate_btc_kvb * Decimal(1e8)) # Fee in sat/kvb as an int to avoid float precision errors
     target_fee_sat = ceildiv(feerate_sat_kvb * tx_size, 1000) # Round calculated fee up to nearest sat
-    return target_fee_sat / Decimal(1e8) # Return result in  DPC
+    return target_fee_sat / Decimal(1e8) # Return result in  BTC
 
 
 def satoshi_round(amount):
