@@ -426,6 +426,7 @@ class EstimateFeeTest(BitcoinTestFramework):
         self.start_node(0)
         self.connect_nodes(0, 1)
         self.connect_nodes(0, 2)
+        self.sync_blocks()
 
         self.log.info("Testing estimates with RBF.")
         self.sanity_check_rbf_estimates(self.confutxo + self.memutxo)
