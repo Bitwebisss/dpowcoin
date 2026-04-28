@@ -689,7 +689,7 @@ class CTransaction:
 
 class CBlockHeader:
     __slots__ = ("hash", "hashMerkleRoot", "hashPrevBlock", "nBits", "nNonce",
-                 "nTime", "nVersion", "sha256", "argon2id", "yespower")
+                 "nTime", "nVersion", "sha256")
 
     def __init__(self, header=None):
         if header is None:
@@ -703,8 +703,7 @@ class CBlockHeader:
             self.nNonce = header.nNonce
             self.sha256 = header.sha256
             self.hash = header.hash
-            self.argon2id = header.argon2id
-            self.yespower = header.yespower
+            self.calc_sha256()
 
     def set_null(self):
         self.nVersion = 4
@@ -715,8 +714,6 @@ class CBlockHeader:
         self.nNonce = 0
         self.sha256 = None
         self.hash = None
-        self.argon2id = None
-        self.yespower = None
 
     def deserialize(self, f):
         self.nVersion = struct.unpack("<i", f.read(4))[0]
@@ -727,8 +724,6 @@ class CBlockHeader:
         self.nNonce = struct.unpack("<I", f.read(4))[0]
         self.sha256 = None
         self.hash = None
-        self.argon2id = None
-        self.yespower = None
 
     def serialize(self):
         r = b""
@@ -742,10 +737,15 @@ class CBlockHeader:
 
     def calc_sha256(self):
         if self.sha256 is None:
-            r = self.serialize()
+            r = b""
+            r += struct.pack("<i", self.nVersion)
+            r += ser_uint256(self.hashPrevBlock)
+            r += ser_uint256(self.hashMerkleRoot)
+            r += struct.pack("<I", self.nTime)
+            r += struct.pack("<I", self.nBits)
+            r += struct.pack("<I", self.nNonce)
             self.sha256 = uint256_from_str(hash256(r))
             self.hash = hash256(r)[::-1].hex()
-            self.yespower = uint256_from_str(dpowcoin_yespower.getPoWHash(r))
 
     def calc_argon2id(self):
         if self.argon2id is None:
@@ -822,10 +822,12 @@ class CBlock(CBlockHeader):
     def is_valid(self):
         self.calc_sha256()
         target = uint256_from_compact(self.nBits)
-        if self.yespower > target:
+        r = self.serialize()
+        if uint256_from_str(dpowcoin_yespower.getPoWHash(r)) > target:
             return False
-        self.calc_argon2id()
-        if self.argon2id > target:
+        salt1 = hashlib.sha512(hashlib.sha512(r).digest()).digest()
+        h1 = GetArgon2idHash(r, salt1, 4096)
+        if uint256_from_str(GetArgon2idHash(r, h1, 32768)) > target:
             return False
         for tx in self.vtx:
             if not tx.is_valid():
@@ -833,26 +835,23 @@ class CBlock(CBlockHeader):
         if self.calc_merkle_root() != self.hashMerkleRoot:
             return False
         return True
-
+    
     def solve(self):
         self.rehash()
         target = uint256_from_compact(self.nBits)
         while True:
-            self.calc_sha256()
-            if self.yespower > target:
+            r = self.serialize()
+            if uint256_from_str(dpowcoin_yespower.getPoWHash(r)) > target:
                 self.nNonce += 1
-                self.sha256 = None
-                self.yespower = None
-                self.argon2id = None
+                self.rehash()
                 continue
-            self.calc_argon2id()
-            if self.argon2id <= target:
-                break
-            self.nNonce += 1
-            self.sha256 = None
-            self.yespower = None
-            self.argon2id = None
-            self.rehash()
+            salt1 = hashlib.sha512(hashlib.sha512(r).digest()).digest()
+            h1 = GetArgon2idHash(r, salt1, 4096)
+            if uint256_from_str(GetArgon2idHash(r, h1, 32768)) > target:
+                self.nNonce += 1
+                self.rehash()
+                continue
+            break
 
     # Calculate the block weight using witness and non-witness
     # serialization size (does NOT use sigops).
