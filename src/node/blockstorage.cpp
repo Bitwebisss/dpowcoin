@@ -1038,10 +1038,10 @@ bool BlockManager::ReadBlockFromDisk(CBlock& block, const FlatFilePos& pos) cons
     }
     // Dual PoW: check cheap Yespower first, only verify Argon2id if Yespower passes
     if (!CheckProofOfWork(block.GetYespowerPoWHash(), block.nBits, GetConsensus())) {
-        return error("ReadBlockFromDisk: Yespower proof of work failed at %s", pos.ToString());
+        return error("ReadBlockFromDisk: Errors in block header Yespower proof of work failed at %s", pos.ToString());
     }
     if (!CheckProofOfWork(block.GetArgon2idPoWHash(), block.nBits, GetConsensus())) {
-        return error("ReadBlockFromDisk: Argon2id proof of work failed at %s", pos.ToString());
+        return error("ReadBlockFromDisk: Errors in block header Argon2id proof of work failed at %s", pos.ToString());
     }
     // Signet only: check block solution
     if (GetConsensus().signet_blocks && !CheckSignetBlockSolution(block, GetConsensus())) {
