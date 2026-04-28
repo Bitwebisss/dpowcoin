@@ -645,6 +645,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
                 ++pblock->nNonce;
                 if (pblock->nNonce == 0) {
                     BOOST_FAIL("nNonce overflow — no valid nonce found for this extranonce");
+                }
             }
             FILE* f = fopen("/tmp/blockinfo.txt", "a");
             fprintf(f, "{%u, %u},\n", bi.extranonce, pblock->nNonce);
