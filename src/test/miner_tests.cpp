@@ -636,16 +636,20 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
             pblock->hashMerkleRoot = BlockMerkleRoot(*pblock);
 
             // Normal usage — hardcoded nonces from BLOCKINFO:
-            pblock->nNonce = bi.nonce;
-            pblock.nNonce = 0;
+            // pblock->nNonce = bi.nonce;
+
+            pblock->nNonce = 0;
             // code for regenerate BLOCKINFO
             while (!CheckProofOfWork(pblock->GetYespowerPoWHash(), pblock->nBits, Assert(m_node.chainman)->GetParams().GetConsensus()) ||
                    !CheckProofOfWork(pblock->GetArgon2idPoWHash(), pblock->nBits, Assert(m_node.chainman)->GetParams().GetConsensus())) {
                 ++pblock->nNonce;
+                BOOST_REQUIRE(pblock->nNonce != 0);
             }
             FILE* f = fopen("/tmp/blockinfo.txt", "a");
             fprintf(f, "{%u, %u},\n", bi.extranonce, pblock->nNonce);
             fclose(f);
+
+
         }
 
         std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(*pblock);
