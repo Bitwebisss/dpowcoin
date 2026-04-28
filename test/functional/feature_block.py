@@ -637,7 +637,6 @@ class FullBlockTest(BitcoinTestFramework):
         target = uint256_from_compact(b47.nBits)
         while True:
         while b47.argon2id <= target and b47.yespower <= target:
-            yespower, argon2id = calc_pow_hashes(b47)
             # Looking for a nonce where at least one algorithm fails
             if yespower > target or argon2id is None or argon2id > target:
                 break
