@@ -689,7 +689,7 @@ class CTransaction:
 
 class CBlockHeader:
     __slots__ = ("hash", "hashMerkleRoot", "hashPrevBlock", "nBits", "nNonce",
-                 "nTime", "nVersion", "sha256")
+                 "nTime", "nVersion", "sha256", "yespower", "argon2id")
 
     def __init__(self, header=None):
         if header is None:
@@ -703,6 +703,8 @@ class CBlockHeader:
             self.nNonce = header.nNonce
             self.sha256 = header.sha256
             self.hash = header.hash
+            self.yespower = header.yespower
+            self.argon2id = header.argon2id
             self.calc_sha256()
 
     def set_null(self):
@@ -714,6 +716,8 @@ class CBlockHeader:
         self.nNonce = 0
         self.sha256 = None
         self.hash = None
+        self.yespower = None
+        self.argon2id = None
 
     def deserialize(self, f):
         self.nVersion = struct.unpack("<i", f.read(4))[0]
@@ -724,6 +728,8 @@ class CBlockHeader:
         self.nNonce = struct.unpack("<I", f.read(4))[0]
         self.sha256 = None
         self.hash = None
+        self.yespower = None
+        self.argon2id = None
 
     def serialize(self):
         r = b""
@@ -748,7 +754,10 @@ class CBlockHeader:
             self.hash = hash256(r)[::-1].hex()
 
     def rehash(self):
+        # Reset all cached hashes so they are recomputed on next access
         self.sha256 = None
+        self.yespower = None
+        self.argon2id = None
         self.calc_sha256()
         return self.sha256
 
@@ -757,8 +766,42 @@ class CBlockHeader:
             % (self.nVersion, self.hashPrevBlock, self.hashMerkleRoot,
                time.ctime(self.nTime), self.nBits, self.nNonce)
 
+
 BLOCK_HEADER_SIZE = len(CBlockHeader().serialize())
 assert_equal(BLOCK_HEADER_SIZE, 80)
+
+
+def calc_pow_hashes(block):
+    """Compute and cache both PoW hashes on the block object.
+
+    Yespower is checked first since it is much faster than Argon2id.
+    Argon2id is only computed if yespower already passes the target,
+    saving significant CPU time when iterating nonces in solve().
+    Both algorithms must pass (AND requirement) for the block to be valid.
+    Returns (yespower_hash, argon2id_hash).
+    """
+    # Return cached values if still valid (cleared by rehash())
+    if block.yespower is not None:
+        return block.yespower, block.argon2id
+
+    r = CBlockHeader.serialize(block)
+
+    # Always compute yespower first — it is fast
+    block.yespower = uint256_from_str(dpowcoin_yespower.getPoWHash(r))
+
+    # Only compute argon2id if yespower already passes the target.
+    # This avoids the expensive argon2id computation on most nonce iterations.
+    target = uint256_from_compact(block.nBits)
+    if block.yespower <= target:
+        salt = hashlib.sha512(hashlib.sha512(r).digest()).digest()
+        h1 = GetArgon2idHash(r, salt, 4096)
+        block.argon2id = uint256_from_str(GetArgon2idHash(r, h1, 32768))
+    else:
+        # Yespower failed — skip argon2id entirely, store sentinel
+        block.argon2id = None
+
+    return block.yespower, block.argon2id
+
 
 class CBlock(CBlockHeader):
     __slots__ = ("vtx",)
@@ -812,12 +855,11 @@ class CBlock(CBlockHeader):
     def is_valid(self):
         self.calc_sha256()
         target = uint256_from_compact(self.nBits)
-        r = CBlockHeader.serialize(self)
-        if uint256_from_str(dpowcoin_yespower.getPoWHash(r)) > target:
+        yespower, argon2id = calc_pow_hashes(self)
+        # Both algorithms must pass (AND requirement)
+        if yespower > target:
             return False
-        salt = hashlib.sha512(hashlib.sha512(r).digest()).digest()
-        h1 = GetArgon2idHash(r, salt, 4096)
-        if uint256_from_str(GetArgon2idHash(r, h1, 32768)) > target:
+        if argon2id is None or argon2id > target:
             return False
         for tx in self.vtx:
             if not tx.is_valid():
@@ -830,18 +872,13 @@ class CBlock(CBlockHeader):
         self.rehash()
         target = uint256_from_compact(self.nBits)
         while True:
-            r = CBlockHeader.serialize(self)
-            if uint256_from_str(dpowcoin_yespower.getPoWHash(r)) > target:
-                self.nNonce += 1
-                self.rehash()
-                continue
-            salt = hashlib.sha512(hashlib.sha512(r).digest()).digest()
-            h1 = GetArgon2idHash(r, salt, 4096)
-            if uint256_from_str(GetArgon2idHash(r, h1, 32768)) > target:
-                self.nNonce += 1
-                self.rehash()
-                continue
-            break
+            yespower, argon2id = calc_pow_hashes(self)
+            # Check yespower first (fast). Only proceed to argon2id check if
+            # yespower passes — argon2id is None when yespower already failed.
+            if yespower <= target and argon2id is not None and argon2id <= target:
+                break
+            self.nNonce += 1
+            self.rehash()  # clears cached yespower/argon2id for next iteration
 
     # Calculate the block weight using witness and non-witness
     # serialization size (does NOT use sigops).
