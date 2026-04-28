@@ -101,7 +101,7 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
         consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].min_activation_height = 0; // No activation delay
 
-        consensus.nMinimumChainWork = uint256S("0000000000000000000000000000000000000000000000000000000063114378"); //190000
+        consensus.nMinimumChainWork = uint256S("0x00"); //190000
         consensus.defaultAssumeValid = uint256S("0x6765d4aa5d8858349ca8901046690079b8d38a034eaf8515d4479d0be98904fb"); //190000
 
         /**
@@ -156,7 +156,6 @@ public:
         checkpointData = {
             {
                 { 0, uint256S("0xd86f8a0582e779830f182befeaaabc8c73a159b6b06530910758daf17ce31e36")},
-                { 2, uint256S("0xd18a3f4ac8aab7647e2b06771cb389dba4a6ec8b107b5ea786e0e3eca0af0373")},
                 { 700, uint256S("0x2005b7aa8f35f4f38677c11fb336b04c038835dc60b259246491e0652110da0e")},
                 { 190000, uint256S("0x6765d4aa5d8858349ca8901046690079b8d38a034eaf8515d4479d0be98904fb")},
             }
