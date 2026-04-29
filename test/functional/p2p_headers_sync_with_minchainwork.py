@@ -126,7 +126,7 @@ class RejectLowDifficultyHeadersTest(BitcoinTestFramework):
             hashPrevBlock = block.sha256
 
         headers_message = msg_headers(headers=new_blocks)
-        p2p.send_and_ping(headers_message)
+        p2p.send_and_ping(headers_message, timeout=300)
 
         # getpeerinfo should show a sync in progress
         assert_equal(node.getpeerinfo()[0]['presynced_headers'], 2000)

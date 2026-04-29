@@ -125,7 +125,7 @@ static const unsigned int BLOCK_DOWNLOAD_WINDOW = 1024;
 /** Block download timeout base, expressed in multiples of the block interval (i.e. 10 min) */
 static constexpr double BLOCK_DOWNLOAD_TIMEOUT_BASE = 2;
 /** Additional block download timeout per parallel downloading peer (i.e. 5 min) */
-static constexpr double BLOCK_DOWNLOAD_TIMEOUT_PER_PEER = 1.0;
+static constexpr double BLOCK_DOWNLOAD_TIMEOUT_PER_PEER = 1;
 /** Maximum number of headers to announce when relaying blocks with headers message.*/
 static const unsigned int MAX_BLOCKS_TO_ANNOUNCE = 8;
 /** Maximum number of unconnecting headers announcements before DoS score */
