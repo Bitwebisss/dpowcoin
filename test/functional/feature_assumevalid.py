@@ -44,7 +44,7 @@ from test_framework.messages import (
     msg_block,
     msg_headers,
 )
-from test_framework.p2p import P2PDataStore, P2PInterface
+from test_framework.p2p import P2PInterface
 from test_framework.script import (
     CScript,
     OP_TRUE,
@@ -151,25 +151,24 @@ class AssumeValidTest(BitcoinTestFramework):
         self.wait_until(lambda: self.nodes[0].getblockcount() >= COINBASE_MATURITY + 1, timeout=300)
         assert_equal(self.nodes[0].getblockcount(), COINBASE_MATURITY + 1)
 
-        # Use P2PDataStore for node1 so that blocks are delivered only on request.
-        # This avoids overwhelming the node with unsolicited blocks (critical for heavy PoW).
-        p2p1 = self.nodes[1].add_p2p_connection(P2PDataStore())
-
-        # Add all blocks to the store
-        with p2p1.p2p_lock:
-            for block in self.blocks:
-                p2p1.block_store[block.sha256] = block
-                p2p1.last_block_hash = block.sha256
-
-        # Send headers first. The node will request blocks via getdata.
+        # Node1: send blocks in batches to avoid overwhelming the node with heavy PoW verification
+        p2p1 = self.nodes[1].add_p2p_connection(BaseNode())
         p2p1.send_header_for_blocks(self.blocks[0:2000])
         p2p1.send_header_for_blocks(self.blocks[2000:])
 
-        # Wait until node fully syncs to height 2202.
-        # P2PDataStore automatically responds to all getdata requests with the requested blocks.
-        self.wait_until(lambda: self.nodes[1].getblockcount() == 2202, timeout=1200)
+        BATCH_SIZE = 50
+        for i in range(0, 2202, BATCH_SIZE):
+            batch = self.blocks[i:i + BATCH_SIZE]
+            for block in batch:
+                p2p1.send_message(msg_block(block))
+            # Wait for node to process this batch before sending the next
+            p2p1.sync_with_ping(timeout=300)
+
+        # Final sync to ensure all blocks are processed
+        p2p1.sync_with_ping(960)
         assert_equal(self.nodes[1].getblock(self.nodes[1].getbestblockhash())['height'], 2202)
 
+        # Node2 remains unchanged
         p2p2 = self.nodes[2].add_p2p_connection(BaseNode())
         p2p2.send_header_for_blocks(self.blocks[0:200])
 
