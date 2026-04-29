@@ -106,9 +106,9 @@ static const unsigned int MAX_GETDATA_SZ = 1000;
 static const int MAX_BLOCKS_IN_TRANSIT_PER_PEER = 16;
 /** Default time during which a peer must stall block download progress before being disconnected.
  * the actual timeout is increased temporarily if peers are disconnected for hitting the timeout */
-static constexpr auto BLOCK_STALLING_TIMEOUT_DEFAULT{32s};
+static constexpr auto BLOCK_STALLING_TIMEOUT_DEFAULT{2s};
 /** Maximum timeout for stalling block download. */
-static constexpr auto BLOCK_STALLING_TIMEOUT_MAX{256s};
+static constexpr auto BLOCK_STALLING_TIMEOUT_MAX{64s};
 /** Number of headers sent in one getheaders result. We rely on the assumption that if a peer sends
  *  less than this number, we reached its tip. Changing this value is a protocol upgrade. */
 static const unsigned int MAX_HEADERS_RESULTS = 2000;
