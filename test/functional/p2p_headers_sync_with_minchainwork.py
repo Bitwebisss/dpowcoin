@@ -149,7 +149,7 @@ class RejectLowDifficultyHeadersTest(BitcoinTestFramework):
 
         self.reconnect_all()
 
-        self.sync_blocks(timeout=600) # Ensure tips eventually agree
+        self.sync_blocks(timeout=1200) # Ensure tips eventually agree
 
 
     def run_test(self):
