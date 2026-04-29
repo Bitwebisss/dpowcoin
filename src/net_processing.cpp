@@ -55,15 +55,15 @@
 /** Headers download timeout.
  *  Timeout = base + per_header * (expected number of headers) */
 static constexpr auto HEADERS_DOWNLOAD_TIMEOUT_BASE = 15min;
-static constexpr auto HEADERS_DOWNLOAD_TIMEOUT_PER_HEADER = 2ms;
+static constexpr auto HEADERS_DOWNLOAD_TIMEOUT_PER_HEADER = 1ms;
 /** How long to wait for a peer to respond to a getheaders request */
-static constexpr auto HEADERS_RESPONSE_TIME{4min};
+static constexpr auto HEADERS_RESPONSE_TIME{2min};
 /** Protect at least this many outbound peers from disconnection due to slow/
  * behind headers chain.
  */
 static constexpr int32_t MAX_OUTBOUND_PEERS_TO_PROTECT_FROM_DISCONNECT = 4;
 /** Timeout for (unprotected) outbound peers to sync to our chainwork */
-static constexpr auto CHAIN_SYNC_TIMEOUT{60min};
+static constexpr auto CHAIN_SYNC_TIMEOUT{20min};
 /** How frequently to check for stale tips */
 static constexpr auto STALE_CHECK_INTERVAL{10min};
 /** How frequently to check for extra outbound peers and disconnect */
