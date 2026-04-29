@@ -44,7 +44,7 @@ from test_framework.messages import (
     msg_block,
     msg_headers,
 )
-from test_framework.p2p import P2PInterface
+from test_framework.p2p import P2PDataStore, P2PInterface
 from test_framework.script import (
     CScript,
     OP_TRUE,
@@ -151,15 +151,23 @@ class AssumeValidTest(BitcoinTestFramework):
         self.wait_until(lambda: self.nodes[0].getblockcount() >= COINBASE_MATURITY + 1, timeout=300)
         assert_equal(self.nodes[0].getblockcount(), COINBASE_MATURITY + 1)
 
-        p2p1 = self.nodes[1].add_p2p_connection(BaseNode())
+        # Use P2PDataStore for node1 so that blocks are delivered only on request.
+        # This avoids overwhelming the node with unsolicited blocks (critical for heavy PoW).
+        p2p1 = self.nodes[1].add_p2p_connection(P2PDataStore())
+
+        # Add all blocks to the store
+        with p2p1.p2p_lock:
+            for block in self.blocks:
+                p2p1.block_store[block.sha256] = block
+                p2p1.last_block_hash = block.sha256
+
+        # Send headers first. The node will request blocks via getdata.
         p2p1.send_header_for_blocks(self.blocks[0:2000])
         p2p1.send_header_for_blocks(self.blocks[2000:])
 
-        # Send all blocks to node1. All blocks will be accepted.
-        for i in range(2202):
-            p2p1.send_message(msg_block(self.blocks[i]))
-        # Syncing 2200 blocks can take a while on slow systems. Give it plenty of time to sync.
-        p2p1.sync_with_ping(1200)
+        # Wait until node fully syncs to height 2202.
+        # P2PDataStore automatically responds to all getdata requests with the requested blocks.
+        self.wait_until(lambda: self.nodes[1].getblockcount() == 2202, timeout=1200)
         assert_equal(self.nodes[1].getblock(self.nodes[1].getbestblockhash())['height'], 2202)
 
         p2p2 = self.nodes[2].add_p2p_connection(BaseNode())
