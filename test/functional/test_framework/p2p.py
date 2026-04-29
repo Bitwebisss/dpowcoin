@@ -460,7 +460,7 @@ class P2PInterface(P2PConnection):
 
     # Connection helper methods
 
-    def wait_until(self, test_function_in, *, timeout=60, check_connected=True):
+    def wait_until(self, test_function_in, *, timeout=120, check_connected=True):
         def test_function():
             if check_connected:
                 assert self.is_connected

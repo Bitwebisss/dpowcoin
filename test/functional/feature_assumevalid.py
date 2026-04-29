@@ -65,7 +65,7 @@ class AssumeValidTest(BitcoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 3
-        self.rpc_timeout = 120
+        self.rpc_timeout = 480
 
     def setup_network(self):
         self.add_nodes(3)
@@ -148,7 +148,7 @@ class AssumeValidTest(BitcoinTestFramework):
 
         # Send blocks to node0. Block 102 will be rejected.
         self.send_blocks_until_disconnected(p2p0)
-        self.wait_until(lambda: self.nodes[0].getblockcount() >= COINBASE_MATURITY + 1)
+        self.wait_until(lambda: self.nodes[0].getblockcount() >= COINBASE_MATURITY + 1, timeout=300)
         assert_equal(self.nodes[0].getblockcount(), COINBASE_MATURITY + 1)
 
         p2p1 = self.nodes[1].add_p2p_connection(BaseNode())

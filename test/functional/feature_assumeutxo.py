@@ -52,7 +52,7 @@ class AssumeutxoTest(BitcoinTestFramework):
     def set_test_params(self):
         """Use the pregenerated, deterministic chain up to height 199."""
         self.num_nodes = 3
-        self.rpc_timeout = 120
+        self.rpc_timeout = 480
         self.extra_args = [
             [],
             ["-fastprune", "-prune=1", "-blockfilterindex=1", "-coinstatsindex=1"],

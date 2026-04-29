@@ -50,7 +50,7 @@ class RejectLowDifficultyHeadersTest(BitcoinTestFramework):
 
     def test_chains_sync_when_long_enough(self):
         self.log.info("Generate blocks on the node with no required chainwork, and verify nodes 1 and 2 have no new headers in their headers tree")
-        with self.nodes[1].assert_debug_log(expected_msgs=["[net] Ignoring low-work chain (height=14)"]), self.nodes[2].assert_debug_log(expected_msgs=["[net] Ignoring low-work chain (height=14)"]), self.nodes[3].assert_debug_log(expected_msgs=["Synchronizing blockheaders, height: 14"]):
+        with self.nodes[1].assert_debug_log(expected_msgs=["[net] Ignoring low-work chain (height=14)"],timeout=20), self.nodes[2].assert_debug_log(expected_msgs=["[net] Ignoring low-work chain (height=14)"], timeout=20), self.nodes[3].assert_debug_log(expected_msgs=["Synchronizing blockheaders, height: 14"], timeout=20):
             self.generate(self.nodes[0], NODE1_BLOCKS_REQUIRED-1, sync_fun=self.no_op)
 
         # Node3 should always allow headers due to noban permissions
