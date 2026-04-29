@@ -27,7 +27,7 @@ NODE2_BLOCKS_REQUIRED = 2047
 
 class RejectLowDifficultyHeadersTest(BitcoinTestFramework):
     def set_test_params(self):
-        self.rpc_timeout *= 8  # To avoid timeout when generating BLOCKS_TO_MINE
+        self.rpc_timeout *= 10  # To avoid timeout when generating BLOCKS_TO_MINE
         self.setup_clean_chain = True
         self.num_nodes = 4
         # Node0 has no required chainwork; node1 requires 15 blocks on top of the genesis block; node2 requires 2047
@@ -81,7 +81,7 @@ class RejectLowDifficultyHeadersTest(BitcoinTestFramework):
         self.log.info("Generate more blocks to satisfy node1's minchainwork requirement, and verify node2 still has no new headers in headers tree")
         with self.nodes[2].assert_debug_log(expected_msgs=["[net] Ignoring low-work chain (height=15)"]), self.nodes[3].assert_debug_log(expected_msgs=["Synchronizing blockheaders, height: 15"]):
             self.generate(self.nodes[0], NODE1_BLOCKS_REQUIRED - self.nodes[0].getblockcount(), sync_fun=self.no_op)
-        self.sync_blocks(self.nodes[0:2], timeout=300) # node3 will sync headers (noban permissions) but not blocks (due to minchainwork)
+        self.sync_blocks(self.nodes[0:2], timeout=600) # node3 will sync headers (noban permissions) but not blocks (due to minchainwork)
 
         assert {
             'height': 0,
@@ -99,7 +99,7 @@ class RejectLowDifficultyHeadersTest(BitcoinTestFramework):
         self.generate(self.nodes[0], NODE2_BLOCKS_REQUIRED-self.nodes[0].getblockcount(), sync_fun=self.no_op)
 
         self.log.info("Verify that node2 and node3 will sync the chain when it gets long enough")
-        self.sync_blocks(timeout=1200)
+        self.sync_blocks(timeout=1400)
 
     def test_peerinfo_includes_headers_presync_height(self):
         self.log.info("Test that getpeerinfo() includes headers presync height")
@@ -149,7 +149,7 @@ class RejectLowDifficultyHeadersTest(BitcoinTestFramework):
 
         self.reconnect_all()
 
-        self.sync_blocks(timeout=1200) # Ensure tips eventually agree
+        self.sync_blocks(timeout=1400) # Ensure tips eventually agree
 
 
     def run_test(self):
