@@ -16,8 +16,9 @@ from collections import OrderedDict
 from decimal import Decimal
 from itertools import product
 
-from test_framework.authproxy import 
+from test_framework.authproxy import ( 
     JSONRPCException,
+)
 
 from test_framework.messages import (
     MAX_BIP125_RBF_SEQUENCE,
