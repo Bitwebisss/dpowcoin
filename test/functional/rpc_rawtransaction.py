@@ -105,7 +105,16 @@ class RawTransactionsTest(BitcoinTestFramework):
             " blockchain transaction queries. Use gettransaction for wallet transactions."
         )
 
-        self.wait_until(lambda: self.nodes[0].getrawtransaction(txId), timeout=60)
+        # Wait until txindex is ready on node 0
+        def wait_for_txindex_1():
+            try:
+                self.nodes[0].getrawtransaction(txId)
+                return True
+            except JSONRPCException as e:
+                if e.error['code'] == -5 and 'still in the process of being indexed' in e.error['message']:
+                    return False
+                raise
+        self.wait_until(wait_for_txindex_1, timeout=60)
 
         for n in [0, 2]:
             self.log.info(f"Test getrawtransaction {'with' if n == 0 else 'without'} -txindex")
@@ -147,7 +156,18 @@ class RawTransactionsTest(BitcoinTestFramework):
         # Make a tx by sending, then generate 2 blocks; block1 has the tx in it
         tx = self.wallet.send_self_transfer(from_node=self.nodes[2])['txid']
         block1, block2 = self.generate(self.nodes[2], 2)
-        self.wait_until(lambda: self.nodes[0].getrawtransaction(txid=tx, verbose=True, blockhash=block1), timeout=60)
+
+        # Wait until txindex is ready on node 0 for the new tx
+        def wait_for_txindex_2():
+            try:
+                self.nodes[0].getrawtransaction(txid=tx, verbose=True, blockhash=block1)
+                return True
+            except JSONRPCException as e:
+                if e.error['code'] == -5 and 'still in the process of being indexed' in e.error['message']:
+                    return False
+                raise
+        self.wait_until(wait_for_txindex_2, timeout=60)
+
         for n in [0, 2]:
             self.log.info(f"Test getrawtransaction {'with' if n == 0 else 'without'} -txindex, with blockhash")
             # We should be able to get the raw transaction by providing the correct block
