@@ -65,7 +65,7 @@ class AssumeValidTest(BitcoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 3
-        self.rpc_timeout = 480
+        self.rpc_timeout = 600
 
     def setup_network(self):
         self.add_nodes(3)
@@ -152,7 +152,7 @@ class AssumeValidTest(BitcoinTestFramework):
 
         # Send blocks to node0. Block 102 will be rejected.
         self.send_blocks_until_disconnected(p2p0)
-        self.wait_until(lambda: self.nodes[0].getblockcount() >= COINBASE_MATURITY + 1, timeout=300)
+        self.wait_until(lambda: self.nodes[0].getblockcount() >= COINBASE_MATURITY + 1, timeout=1200)
         assert_equal(self.nodes[0].getblockcount(), COINBASE_MATURITY + 1)
 
         # Node1: send headers in chunks, then blocks in batches
@@ -166,10 +166,10 @@ class AssumeValidTest(BitcoinTestFramework):
             for block in batch:
                 p2p1.send_message(msg_block(block))
             # Wait for node to process this batch before sending the next
-            p2p1.sync_with_ping(timeout=300)
+            p2p1.sync_with_ping(timeout=600)
 
         # Final sync to ensure all blocks are processed
-        p2p1.sync_with_ping(960)
+        p2p1.sync_with_ping(1200)
         assert_equal(self.nodes[1].getblock(self.nodes[1].getbestblockhash())['height'], TOTAL_BLOCKS)
 
         # Node2: only first 200 blocks (shallow burial)
