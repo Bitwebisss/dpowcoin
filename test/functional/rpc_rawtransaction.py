@@ -105,8 +105,7 @@ class RawTransactionsTest(BitcoinTestFramework):
             " blockchain transaction queries. Use gettransaction for wallet transactions."
         )
 
-        # Ждём готовности txindex на узле 0, чтобы избежать ошибки «still indexing»
-        self.nodes[0].wait_until(lambda: self.nodes[0].getrawtransaction(txId), timeout=60)
+        self.wait_until(lambda: self.nodes[0].getrawtransaction(txId), timeout=60)
 
         for n in [0, 2]:
             self.log.info(f"Test getrawtransaction {'with' if n == 0 else 'without'} -txindex")
@@ -148,8 +147,7 @@ class RawTransactionsTest(BitcoinTestFramework):
         # Make a tx by sending, then generate 2 blocks; block1 has the tx in it
         tx = self.wallet.send_self_transfer(from_node=self.nodes[2])['txid']
         block1, block2 = self.generate(self.nodes[2], 2)
-        # Ждём готовности txindex на узле 0 (если требуется)
-        self.nodes[0].wait_until(lambda: self.nodes[0].getrawtransaction(txid=tx, verbose=True, blockhash=block1), timeout=60)
+        self.wait_until(lambda: self.nodes[0].getrawtransaction(txid=tx, verbose=True, blockhash=block1), timeout=60)
         for n in [0, 2]:
             self.log.info(f"Test getrawtransaction {'with' if n == 0 else 'without'} -txindex, with blockhash")
             # We should be able to get the raw transaction by providing the correct block
