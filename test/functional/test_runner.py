@@ -95,6 +95,8 @@ EXTENDED_SCRIPTS = [
 BASE_SCRIPTS = [
     # Scripts that are run by default.
     # Longest test should go first, to favor running tests in parallel
+    # vv Tests more than 50m
+    'p2p_headers_sync_with_minchainwork.py',
     # vv Tests less than 5m vv
     'feature_fee_estimation.py',
     'feature_taproot.py',
@@ -143,7 +145,6 @@ BASE_SCRIPTS = [
     'rpc_bind.py --ipv4',
     'rpc_bind.py --ipv6',
     'rpc_bind.py --nonloopback',
-    'p2p_headers_sync_with_minchainwork.py',
     'p2p_feefilter.py',
     'feature_csv_activation.py',
     'p2p_sendheaders.py',
