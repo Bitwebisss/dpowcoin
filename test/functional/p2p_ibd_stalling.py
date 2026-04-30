@@ -76,7 +76,7 @@ class P2PIBDStallingTest(BitcoinTestFramework):
         for id in range(NUM_PEERS):
             peers.append(node.add_outbound_p2p_connection(P2PStaller(stall_block), p2p_idx=id, connection_type="outbound-full-relay"))
             peers[-1].block_store = block_dict
-            peers[-1].send_message(headers_message)
+            peers[-1].send_and_ping(headers_message)
 
         # Need to wait until 1023 blocks are received - the magic total bytes number is a workaround in lack of an rpc
         # returning the number of downloaded (but not connected) blocks.
@@ -94,7 +94,7 @@ class P2PIBDStallingTest(BitcoinTestFramework):
         headers_message.headers = [CBlockHeader(b) for b in blocks]
         with node.assert_debug_log(expected_msgs=['Stall started']):
             for p in peers:
-                p.send_message(headers_message)
+                p.send_without_ping(headers_message)
             self.all_sync_send_with_ping(peers)
 
         self.log.info("Check that the stalling peer is disconnected after 2 seconds")
